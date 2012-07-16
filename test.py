@@ -30,12 +30,18 @@ class BulletApp(ShowBase):
 
         self.create_ground()
 
-        for barrel_num in range(15):
-            # create a column of barrels falling from the sky
-            position = [0, 0, 2 * barrel_num + 2]
-            # add a bit of random noise to the start position
-            position = [p + 0.3 * (random.random() - 0.5) for p in position]
-            self.create_barrel(position)
+        # create a pyramid of barrels
+        width = 0.8
+        height = 1.0
+        num_rows = 5
+        for row in range(num_rows):
+            for column in range(num_rows - row):
+                row_start = 0.5 * width * (row - num_rows + 1)
+                position = [
+                        row_start + column * width,
+                        0,
+                        row * height]
+                self.create_barrel(position, height)
 
         self.taskMgr.add(self.game_loop, 'update')
 
@@ -53,7 +59,7 @@ class BulletApp(ShowBase):
             self.debugNP.node().showNormals(True)
             self.world.setDebugNode(self.debugNP.node())
 
-    def create_barrel(self, position):
+    def create_barrel(self, position, height=1.0):
         """
         Create a barrel with the centre of the base at the given position
         """
@@ -76,18 +82,18 @@ class BulletApp(ShowBase):
         barrel_min, barrel_max = barrel.getTightBounds()
 
         # Y is the cylinder axis here
-        desired_height = 1.0
-        scale = desired_height  / (barrel_max[2] - barrel_min[2])
+        scale = height  / (barrel_max[2] - barrel_min[2])
         radius = (barrel_max[0] - barrel_min[0]) * scale * 0.5
 
         # Create a barrel for physics
-        barrel_shape = BulletCylinderShape(radius, desired_height, ZUp)
+        barrel_shape = BulletCylinderShape(radius, height, ZUp)
         barrel_node = BulletRigidBodyNode('barrel')
         barrel_node.setMass(8.0)
         barrel_node.setFriction(100.0)
         barrel_node.addShape(barrel_shape)
 
         np = self.render.attachNewNode(barrel_node)
+        position[2] = position[2] + 0.5 * height
         np.setPos(*position)
         np.setHpr(0, 0, 0)
         self.world.attachRigidBody(barrel_node)
