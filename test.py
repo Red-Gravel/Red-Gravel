@@ -1,7 +1,9 @@
 import random
 import time
+from collections import defaultdict
 
 from direct.showbase.ShowBase import ShowBase
+from direct.showbase.DirectObject import DirectObject
 from panda3d.core import Vec3, Vec4, Point3
 from panda3d.core import AmbientLight, Spotlight
 from pandac.PandaModules import ClockObject
@@ -65,6 +67,70 @@ class Vehicle(object):
         wheel.setRollInfluence(0.1)
 
 
+class PlayerControl(DirectObject):
+    """
+    Controls a vehicle from input
+    """
+
+    def __init__(self, vehicle):
+        self.vehicle = vehicle
+        self.input_state = defaultdict(bool)
+
+        controls = {
+                "keyboard": {
+                    "forward": "arrow_up",
+                    "brake": "arrow_down",
+                    "left": "arrow_left",
+                    "right": "arrow_right",
+                    }
+                }
+
+        for action, bind in controls["keyboard"].iteritems():
+            self.accept(bind, self.input_state.update, [{action: True}])
+            self.accept(bind + "-up", self.input_state.update, [{action: False}])
+
+        self.steering = 0.0  # in degrees
+        self.steering_lock = 45.0  # in degrees
+        self.steering_increment = 100.0  # in degrees/second
+        self.centering_rate = 50.0  # in degrees/second
+
+    def process_input(self, dt):
+        engine_force = 0.0
+        brake_force = 0.0
+
+        if self.input_state["forward"]:
+            engine_force = 1000.0
+        if self.input_state["brake"]:
+            brake_force = 100.0
+
+        if self.input_state["left"]:
+            self.steering += dt * self.steering_increment
+            self.steering = min(self.steering, self.steering_lock)
+        if self.input_state["right"]:
+            self.steering -= dt * self.steering_increment
+            self.steering = max(self.steering, -self.steering_lock)
+        elif not(self.input_state["left"]):
+            # gradually re-center the steering
+            if self.steering > 0.0:
+                self.steering -= dt * self.centering_rate
+                if self.steering < 0.0:
+                    self.steering = 0.0
+            elif self.steering < 0.0:
+                self.steering += dt * self.centering_rate
+                if self.steering > 0.0:
+                    self.steering = 0.0
+
+        # Apply steering to front wheels
+        self.vehicle.setSteeringValue(self.steering, 0);
+        self.vehicle.setSteeringValue(self.steering, 1);
+
+        # Apply engine and brake to rear wheels
+        self.vehicle.applyEngineForce(engine_force, 2);
+        self.vehicle.applyEngineForce(engine_force, 3);
+        self.vehicle.setBrake(brake_force, 2);
+        self.vehicle.setBrake(brake_force, 3);
+
+
 class BulletApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
@@ -99,10 +165,7 @@ class BulletApp(ShowBase):
         self.taskMgr.add(self.game_loop, 'update')
 
         self.vehicle = Vehicle((0.0, -5.0, 0.5), self.render, self.world)
-        self.vehicle.vehicle.applyEngineForce(400, 2)
-        self.vehicle.vehicle.applyEngineForce(400, 3)
-        self.vehicle.vehicle.setSteeringValue(0, 0)
-        self.vehicle.vehicle.setSteeringValue(0, 1)
+        self.controller = PlayerControl(self.vehicle.vehicle)
 
     def initialise_physics(self, debug=False):
         """Create Bullet world for physics objects"""
@@ -224,6 +287,7 @@ class BulletApp(ShowBase):
 
     def game_loop(self, task):
         dt = self.globalClock.getDt()
+        self.controller.process_input(dt)
         self.world.doPhysics(dt)
         return task.cont
 
