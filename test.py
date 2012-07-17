@@ -1,5 +1,6 @@
 import random
 import time
+import math
 from collections import defaultdict
 
 from direct.showbase.ShowBase import ShowBase
@@ -23,22 +24,22 @@ class Vehicle(object):
         shape = BulletBoxShape(Vec3(0.6, 1.4, 0.5))
         ts = TransformState.makePos(Point3(0, 0, 0.5))
 
-        self.node = BulletRigidBodyNode("vehicle")
-        self.node.addShape(shape, ts)
-        self.node.setMass(800.0)
-        self.node.setDeactivationEnabled(False)
+        self.rigid_node = BulletRigidBodyNode("vehicle")
+        self.rigid_node.addShape(shape, ts)
+        self.rigid_node.setMass(800.0)
+        self.rigid_node.setDeactivationEnabled(False)
 
-        np = render.attachNewNode(self.node)
-        np.setPos(position)
-        world.attachRigidBody(self.node)
+        self.np = render.attachNewNode(self.rigid_node)
+        self.np.setPos(position)
+        world.attachRigidBody(self.rigid_node)
 
         # Vehicle
-        self.vehicle = BulletVehicle(world, self.node)
+        self.vehicle = BulletVehicle(world, self.rigid_node)
         self.vehicle.setCoordinateSystem(ZUp)
         world.attachVehicle(self.vehicle)
 
         self.yugoNP = loader.loadModel("models/yugo/yugo.egg")
-        self.yugoNP.reparentTo(np)
+        self.yugoNP.reparentTo(self.np)
 
         # Create wheels
         for fb, y in (("F", 1.05), ("B", -1.05)):
@@ -72,8 +73,9 @@ class PlayerControl(DirectObject):
     Controls a vehicle from input
     """
 
-    def __init__(self, vehicle):
+    def __init__(self, vehicle, camera):
         self.vehicle = vehicle
+        self.camera = camera
         self.input_state = defaultdict(bool)
 
         controls = {
@@ -89,17 +91,29 @@ class PlayerControl(DirectObject):
             self.accept(bind, self.input_state.update, [{action: True}])
             self.accept(bind + "-up", self.input_state.update, [{action: False}])
 
+        # Initialise steering
         self.steering = 0.0  # in degrees
         self.steering_lock = 45.0  # in degrees
-        self.steering_increment = 100.0  # in degrees/second
+        self.steering_increment = 50.0  # in degrees/second
         self.centering_rate = 50.0  # in degrees/second
 
+        # Get camera to follow car
+        self.camera.reparentTo(self.vehicle.np)
+        self.camera.setPos(0, -10, 4)
+        self.camera.lookAt(0, 5, 0)
+
+    def update_player(self, dt):
+        self.process_input(dt)
+        self.update_camera()
+
     def process_input(self, dt):
+        """Control the players car"""
+
         engine_force = 0.0
         brake_force = 0.0
 
         if self.input_state["forward"]:
-            engine_force = 1000.0
+            engine_force = 2000.0
         if self.input_state["brake"]:
             brake_force = 100.0
 
@@ -120,15 +134,36 @@ class PlayerControl(DirectObject):
                 if self.steering > 0.0:
                     self.steering = 0.0
 
+        vehicle = self.vehicle.vehicle
         # Apply steering to front wheels
-        self.vehicle.setSteeringValue(self.steering, 0);
-        self.vehicle.setSteeringValue(self.steering, 1);
+        vehicle.setSteeringValue(self.steering, 0);
+        vehicle.setSteeringValue(self.steering, 1);
 
         # Apply engine and brake to rear wheels
-        self.vehicle.applyEngineForce(engine_force, 2);
-        self.vehicle.applyEngineForce(engine_force, 3);
-        self.vehicle.setBrake(brake_force, 2);
-        self.vehicle.setBrake(brake_force, 3);
+        vehicle.applyEngineForce(engine_force, 2);
+        vehicle.applyEngineForce(engine_force, 3);
+        vehicle.setBrake(brake_force, 2);
+        vehicle.setBrake(brake_force, 3);
+
+    def update_camera(self):
+        """Reposition camera depending on the vehicle speed"""
+
+        min_distance = 8.0
+        max_distance = 30.0
+        min_height = 3.0
+        max_height = 7.0
+
+        max_speed = 30  # m/s
+
+        velocity = self.vehicle.rigid_node.getLinearVelocity()
+        speed = math.sqrt(sum(v ** 2 for v in velocity))
+
+        distance = min_distance + (max_distance - min_distance) * speed / max_speed
+        distance = min(max_distance, distance)
+        self.camera.setY(-distance)
+        height = min_height + (max_height - min_height) * speed / max_speed
+        height = min(max_height, height)
+        self.camera.setZ(height)
 
 
 class BulletApp(ShowBase):
@@ -137,9 +172,7 @@ class BulletApp(ShowBase):
 
         self.setFrameRateMeter(True)
         self.globalClock = ClockObject.getGlobalClock()
-
-        self.cam.setPos(0, -15, 10)
-        self.cam.lookAt(0, 0, 0)
+        self.disableMouse()
 
         self.render.setShaderAuto()
 
@@ -164,8 +197,8 @@ class BulletApp(ShowBase):
 
         self.taskMgr.add(self.game_loop, 'update')
 
-        self.vehicle = Vehicle((0.0, -5.0, 0.5), self.render, self.world)
-        self.controller = PlayerControl(self.vehicle.vehicle)
+        self.vehicle = Vehicle((0.0, -15.0, 0.5), self.render, self.world)
+        self.controller = PlayerControl(self.vehicle, self.cam)
 
     def initialise_physics(self, debug=False):
         """Create Bullet world for physics objects"""
@@ -248,7 +281,7 @@ class BulletApp(ShowBase):
         s_ts = TextureStage('specular')
         s_ts.setMode(TextureStage.MGloss)
 
-        size = 40.
+        size = 400.
         texture_size = 12.0
         # Could use the CardMaker but this doesn't create the
         # tangents and binormals required for the normal map
@@ -287,7 +320,7 @@ class BulletApp(ShowBase):
 
     def game_loop(self, task):
         dt = self.globalClock.getDt()
-        self.controller.process_input(dt)
+        self.controller.update_player(dt)
         self.world.doPhysics(dt)
         return task.cont
 
