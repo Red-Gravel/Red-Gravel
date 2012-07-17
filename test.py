@@ -6,10 +6,63 @@ from panda3d.core import Vec3, Vec4, Point3
 from panda3d.core import AmbientLight, Spotlight
 from pandac.PandaModules import ClockObject
 from panda3d.core import Texture, TextureStage
+from panda3d.core import TransformState
 from panda3d.bullet import BulletWorld
-from panda3d.bullet import BulletPlaneShape, BulletCylinderShape
+from panda3d.bullet import BulletPlaneShape, BulletCylinderShape, BulletBoxShape
 from panda3d.bullet import BulletRigidBodyNode, BulletDebugNode
+from panda3d.bullet import BulletVehicle
 from panda3d.bullet import XUp, YUp, ZUp
+
+
+class Vehicle(object):
+    def __init__(self, position, render, world):
+        # Chassis uses a simple box shape
+        # Note that these are half-extents:
+        shape = BulletBoxShape(Vec3(0.6, 1.4, 0.5))
+        ts = TransformState.makePos(Point3(0, 0, 0.5))
+
+        self.node = BulletRigidBodyNode("vehicle")
+        self.node.addShape(shape, ts)
+        self.node.setMass(800.0)
+        self.node.setDeactivationEnabled(False)
+
+        np = render.attachNewNode(self.node)
+        np.setPos(position)
+        world.attachRigidBody(self.node)
+
+        # Vehicle
+        self.vehicle = BulletVehicle(world, self.node)
+        self.vehicle.setCoordinateSystem(ZUp)
+        world.attachVehicle(self.vehicle)
+
+        self.yugoNP = loader.loadModel("models/yugo/yugo.egg")
+        self.yugoNP.reparentTo(np)
+
+        # Create wheels
+        for fb, y in (("F", 1.05), ("B", -1.05)):
+            for side, x in (("R", 0.7), ("L", -0.7)):
+                np = loader.loadModel("models/yugo/yugotire%s.egg" % side)
+                np.reparentTo(render)
+                is_front = fb == "F"
+                self.add_wheel(Point3(x, y, 0.3), is_front, np)
+
+    def add_wheel(self, position, is_front, np):
+        wheel = self.vehicle.createWheel()
+
+        wheel.setNode(np.node())
+        wheel.setChassisConnectionPointCs(position)
+        wheel.setFrontWheel(is_front)
+
+        wheel.setWheelDirectionCs(Vec3(0, 0, -1))
+        wheel.setWheelAxleCs(Vec3(1, 0, 0))
+        wheel.setWheelRadius(0.25)
+        wheel.setMaxSuspensionTravelCm(40.0)
+
+        wheel.setSuspensionStiffness(40.0)
+        wheel.setWheelsDampingRelaxation(2.3)
+        wheel.setWheelsDampingCompression(4.4)
+        wheel.setFrictionSlip(100.0)
+        wheel.setRollInfluence(0.1)
 
 
 class BulletApp(ShowBase):
@@ -44,6 +97,12 @@ class BulletApp(ShowBase):
                 self.create_barrel(position, height)
 
         self.taskMgr.add(self.game_loop, 'update')
+
+        self.vehicle = Vehicle((0.0, -5.0, 0.5), self.render, self.world)
+        self.vehicle.vehicle.applyEngineForce(400, 2)
+        self.vehicle.vehicle.applyEngineForce(400, 3)
+        self.vehicle.vehicle.setSteeringValue(0, 0)
+        self.vehicle.vehicle.setSteeringValue(0, 1)
 
     def initialise_physics(self, debug=False):
         """Create Bullet world for physics objects"""
