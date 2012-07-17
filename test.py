@@ -99,8 +99,8 @@ class PlayerControl(DirectObject):
 
         # Get camera to follow car
         self.camera.reparentTo(self.vehicle.np)
-        self.camera.setPos(0, -10, 4)
-        self.camera.lookAt(0, 5, 0)
+        self.camera.setPos(0, -10, 2)
+        self.camera.lookAt(0, 0, 0)
 
     def update_player(self, dt):
         self.process_input(dt)
@@ -149,21 +149,32 @@ class PlayerControl(DirectObject):
         """Reposition camera depending on the vehicle speed"""
 
         min_distance = 8.0
-        max_distance = 30.0
-        min_height = 3.0
-        max_height = 7.0
-
+        max_distance = 20.0
+        min_height = 1.5
+        max_height = 4.0
         max_speed = 30  # m/s
 
         velocity = self.vehicle.rigid_node.getLinearVelocity()
         speed = math.sqrt(sum(v ** 2 for v in velocity))
-
         distance = min_distance + (max_distance - min_distance) * speed / max_speed
         distance = min(max_distance, distance)
-        self.camera.setY(-distance)
         height = min_height + (max_height - min_height) * speed / max_speed
         height = min(max_height, height)
-        self.camera.setZ(height)
+
+        # remove the effect of roll and pitch so that the height is
+        # applied in the direction of the world, rather than the
+        # vehicle basis
+        head, pitch, roll = self.vehicle.np.getHpr()
+        r = roll / 180.0 * math.pi
+        p = -pitch / 180.0 * math.pi
+        x = -math.sin(r) * (-distance * math.sin(p) + height * math.cos(p))
+        y = -distance * math.cos(p) - height * math.sin(p)
+        z = math.cos(r) * (-distance * math.sin(p) + height * math.cos(p))
+
+        self.camera.setPos(x, y, z)
+
+        self.camera.lookAt(0, 0, 0)
+        self.camera.setR(-roll)
 
 
 class BulletApp(ShowBase):
