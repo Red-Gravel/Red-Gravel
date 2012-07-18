@@ -96,11 +96,7 @@ class PlayerControl(DirectObject):
         self.steering_lock = 45.0  # in degrees
         self.steering_increment = 50.0  # in degrees/second
         self.centering_rate = 50.0  # in degrees/second
-
-        # Get camera to follow car
-        self.camera.reparentTo(self.vehicle.np)
-        self.camera.setPos(0, -10, 2)
-        self.camera.lookAt(0, 0, 0)
+        self.update_camera(initial=True)
 
     def update_player(self, dt):
         self.process_input(dt)
@@ -145,36 +141,41 @@ class PlayerControl(DirectObject):
         vehicle.setBrake(brake_force, 2);
         vehicle.setBrake(brake_force, 3);
 
-    def update_camera(self):
+    def update_camera(self, initial=False):
         """Reposition camera depending on the vehicle speed"""
 
         min_distance = 8.0
         max_distance = 20.0
         min_height = 1.5
         max_height = 4.0
-        max_speed = 30  # m/s
+        max_speed = 30.0  # m/s
 
-        velocity = self.vehicle.rigid_node.getLinearVelocity()
-        speed = math.sqrt(sum(v ** 2 for v in velocity))
-        distance = min_distance + (max_distance - min_distance) * speed / max_speed
-        distance = min(max_distance, distance)
-        height = min_height + (max_height - min_height) * speed / max_speed
-        height = min(max_height, height)
+        if initial:
+            distance = min_distance
+            height = min_height
+        else:
+            velocity = self.vehicle.rigid_node.getLinearVelocity()
+            speed = math.sqrt(sum(v ** 2 for v in velocity))
+            distance = (min_distance +
+                    (max_distance - min_distance) * speed / max_speed)
+            distance = min(max_distance, distance)
+            height = min_height + (max_height - min_height) * speed / max_speed
+            height = min(max_height, height)
 
-        # remove the effect of roll and pitch so that the height is
-        # applied in the direction of the world, rather than the
-        # vehicle basis
-        head, pitch, roll = self.vehicle.np.getHpr()
-        r = roll / 180.0 * math.pi
-        p = -pitch / 180.0 * math.pi
-        x = -math.sin(r) * (-distance * math.sin(p) + height * math.cos(p))
-        y = -distance * math.cos(p) - height * math.sin(p)
-        z = math.cos(r) * (-distance * math.sin(p) + height * math.cos(p))
+        v_pos = self.vehicle.np.getPos()
+        heading_rad = self.vehicle.np.getH() * math.pi / 180.0
 
-        self.camera.setPos(x, y, z)
+        target_pos = v_pos + Vec3(
+                distance * math.sin(heading_rad),
+                -distance * math.cos(heading_rad),
+                height)
+        camera_pos = self.camera.getPos()
 
-        self.camera.lookAt(0, 0, 0)
-        self.camera.setR(-roll)
+        if initial:
+            self.camera.setPos(target_pos)
+        else:
+            self.camera.setPos(camera_pos + (target_pos - camera_pos) * 0.1)
+        self.camera.lookAt(*v_pos)
 
 
 class BulletApp(ShowBase):
@@ -183,6 +184,8 @@ class BulletApp(ShowBase):
 
         self.setFrameRateMeter(True)
         self.globalClock = ClockObject.getGlobalClock()
+        self.globalClock.setMode(ClockObject.MLimited)
+        self.globalClock.setFrameRate(60)
         self.disableMouse()
 
         self.render.setShaderAuto()
