@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import random
 import time
 import math
@@ -96,7 +97,10 @@ class PlayerControl(DirectObject):
         self.steering_lock = 45.0  # in degrees
         self.steering_increment = 50.0  # in degrees/second
         self.centering_rate = 50.0  # in degrees/second
+
+        # Initialise camera
         self.update_camera(initial=True)
+        self.camera.node().getLens().setFov(45)
 
     def update_player(self, dt):
         self.process_input(dt)
@@ -145,9 +149,9 @@ class PlayerControl(DirectObject):
         """Reposition camera depending on the vehicle speed"""
 
         min_distance = 8.0
-        max_distance = 20.0
+        max_distance = 13.0
         min_height = 1.5
-        max_height = 4.0
+        max_height = 3.0
         max_speed = 30.0  # m/s
 
         if initial:
@@ -175,7 +179,9 @@ class PlayerControl(DirectObject):
             self.camera.setPos(target_pos)
         else:
             self.camera.setPos(camera_pos + (target_pos - camera_pos) * 0.1)
+        # Look slightly ahead of the car
         self.camera.lookAt(*v_pos)
+        self.camera.setP(self.camera.getP() + 7)
 
 
 class BulletApp(ShowBase):
@@ -188,13 +194,13 @@ class BulletApp(ShowBase):
         self.globalClock.setFrameRate(60)
         self.disableMouse()
 
-        self.render.setShaderAuto()
-
         self.create_lights()
+        self.render.setShaderAuto()
 
         self.initialise_physics(debug=False)
 
         self.create_ground()
+        self.create_skybox()
 
         # create a pyramid of barrels
         width = 0.8
@@ -311,12 +317,26 @@ class BulletApp(ShowBase):
 
         floor.reparentTo(np)
 
+    def create_skybox(self):
+        """
+        Create a skybox
+        """
+
+        sky = self.loader.loadModel("models/sky/cube.egg")
+        diffuse = self.loader.loadTexture("models/sky/skymap.png")
+        sky.setTexture(diffuse)
+        sky.setScale(200)
+        # Get it to follow the camera so it feels as if it's infinitely
+        # far away, but call setCompass so it rotates with the world
+        sky.reparentTo(self.cam)
+        sky.setCompass()
+
     def create_lights(self):
         """Create an ambient light and a spotlight for shadows"""
         self.render.clearLight()
 
         alight = AmbientLight('ambientLight')
-        alight.setColor(Vec4(0.3, 0.3, 0.3, 1))
+        alight.setColor(Vec4(0.7, 0.7, 0.7, 1))
         alightNP = self.render.attachNewNode(alight)
         self.render.setLight(alightNP)
 
