@@ -3,6 +3,7 @@ import random
 import time
 import math
 from collections import defaultdict
+import sys
 
 from direct.showbase.ShowBase import ShowBase
 from direct.showbase.DirectObject import DirectObject
@@ -71,8 +72,8 @@ class Vehicle(object):
         wheel.setSuspensionStiffness(40.0)
         wheel.setWheelsDampingRelaxation(2.3)
         wheel.setWheelsDampingCompression(4.4)
-        wheel.setFrictionSlip(100.0)
-        wheel.setRollInfluence(0.1)
+        wheel.setFrictionSlip(1000.0)
+        wheel.setRollInfluence(0.05)
 
 
 class PlayerControl(DirectObject):
@@ -280,6 +281,9 @@ class BulletApp(ShowBase):
         Called when the panda window is modified to update FOV and aspect ratio
         TODO fix hardcoding for camera names
         """ 
+        if window.isClosed():
+            sys.exit()
+        
         wp = window.getProperties() 
         windowWidth = wp.getXSize() 
         windowHeight = wp.getYSize() 
