@@ -9,8 +9,10 @@ from direct.showbase.DirectObject import DirectObject
 from panda3d.core import Vec3, Vec4, Point3
 from panda3d.core import AmbientLight, Spotlight
 from pandac.PandaModules import ClockObject
+from pandac.PandaModules import WindowProperties
 from panda3d.core import Texture, TextureStage
 from panda3d.core import TransformState
+from panda3d.core import BitMask32
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import BulletPlaneShape, BulletCylinderShape, BulletBoxShape
 from panda3d.bullet import BulletRigidBodyNode, BulletDebugNode
@@ -74,19 +76,29 @@ class PlayerControl(DirectObject):
     Controls a vehicle from input
     """
 
-    def __init__(self, vehicle, camera):
+    def __init__(self, vehicle, camera, controlSet):
         self.vehicle = vehicle
         self.camera = camera
         self.inputState = defaultdict(bool)
-
+        
         controls = {
-                "keyboard": {
-                    "forward": "arrow_up",
-                    "brake": "arrow_down",
-                    "left": "arrow_left",
-                    "right": "arrow_right",
+                    "keyboard": {
+                        "forward": "arrow_up",
+                        "brake": "arrow_down",
+                        "left": "arrow_left",
+                        "right": "arrow_right",
+                        }
                     }
-                }
+        #added for multiplayer
+        if controlSet == 2:
+            controls = {
+                    "keyboard": {
+                        "forward": "w",
+                        "brake": "s",
+                        "left": "a",
+                        "right": "d",
+                        }
+                    }
 
         for action, bind in controls["keyboard"].iteritems():
             self.accept(bind, self.inputState.update, [{action: True}])
@@ -100,7 +112,7 @@ class PlayerControl(DirectObject):
 
         # Initialise camera
         self.updateCamera(initial=True)
-        self.camera.node().getLens().setFov(45)
+        self.camera.node().getLens().setFov(60)
 
     def updatePlayer(self, dt):
         self.processInput(dt)
@@ -187,6 +199,7 @@ class PlayerControl(DirectObject):
 class BulletApp(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
+        self.windowEventSetup()
 
         self.setFrameRateMeter(True)
         self.globalClock = ClockObject.getGlobalClock()
@@ -200,7 +213,6 @@ class BulletApp(ShowBase):
         self.initialisePhysics(debug=False)
 
         self.createGround()
-        self.createSkybox()
 
         # create a pyramid of barrels
         width = 0.8
@@ -216,12 +228,74 @@ class BulletApp(ShowBase):
                 self.createBarrel(position, height)
 
         self.taskMgr.add(self.gameLoop, 'update')
-
+        
+        #disable default cam so that we can have multiplayer
+        base.camNode.setActive(False)
+        
+        #moved player setup out to its own method
+        self.setupPlayers()
+    
+    
+    
+    def setupPlayers(self):
+        """
+        Method to set up player, camera and skybox
+        Sets up two player splitscreen
+        TODO: Needs reorganising, removal of hardcoding
+        """
+        #set up first player camera
+        self.camera1=self.createCamera((0.,1,0.5,1),(0,-8,3)) 
         self.vehicle = Vehicle((0.0, -15.0, 0.5), self.render, self.world)
-        self.controller = PlayerControl(self.vehicle, self.cam)
+        self.controller = PlayerControl(self.vehicle, self.camera1, 1)
+        self.createSkybox(self.camera1,1)
+        
+        self.camera2=self.createCamera((0.,1,0,0.5),(0,-8,3))  
+        self.vehicle2 = Vehicle((0.0, -30., 0.5), self.render, self.world)
+        self.controller2 = PlayerControl(self.vehicle2, self.camera2, 2)
+        self.createSkybox(self.camera2,2)
+
+
+
+
+    def windowEventSetup( self ): 
+        """
+        Method to bind window events (resizing etc) to windowEventHandler method
+        """
+        self.accept('window-event', self.windowEventHandler) 
+
+    def windowEventHandler( self, window=None ): 
+        """ 
+        Called when the panda window is modified to update FOV and aspect ratio
+        TODO fix hardcoding for camera names
+        """ 
+        wp = window.getProperties() 
+        windowWidth = wp.getXSize() 
+        windowHeight = wp.getYSize() 
+        self.camera1.node().getLens().setAspectRatio(windowWidth/(windowHeight/2)) 
+        self.camera1.node().getLens().setFov(60)
+        self.camera2.node().getLens().setAspectRatio(windowWidth/(windowHeight/2)) 
+        self.camera2.node().getLens().setFov(60)
+
+
+
+    def createCamera(self,dispRegion,pos): 
+        """
+        Method to create a camera. Takes displayRegion and a position tuple.
+        """
+        camera=base.makeCamera(base.win,displayRegion=dispRegion) 
+        windowWidth = base.win.getXSize()
+        windowHeight = base.win.getYSize()
+        camera.node().getLens().setAspectRatio(windowWidth/(windowHeight/2)) 
+        camera.node().getLens().setFov(60)
+        camera.setPos(pos)
+        return camera
+
+
 
     def initialisePhysics(self, debug=False):
-        """Create Bullet world for physics objects"""
+        """
+        Create Bullet world for physics objects
+        """
 
         self.world = BulletWorld()
         self.world.setGravity(Vec3(0, 0, -9.81))
@@ -308,9 +382,11 @@ class BulletApp(ShowBase):
 
         floor.reparentTo(np)
 
-    def createSkybox(self):
+    def createSkybox(self, currentCamera, bitmaskCode):
         """
-        Create a skybox
+        Create a skybox linked to the current camera setup. 
+        Skybox will only be shown to camera with this bitmaskCode
+        TODO: remove bitmaskCode or make it more modular to reduce coupling
         """
 
         sky = self.loader.loadModel("models/sky/cube.egg")
@@ -319,8 +395,12 @@ class BulletApp(ShowBase):
         sky.setScale(200)
         # Get it to follow the camera so it feels as if it's infinitely
         # far away, but call setCompass so it rotates with the world
-        sky.reparentTo(self.cam)
+        sky.reparentTo(currentCamera)
         sky.setCompass()
+        sky.hide(BitMask32.allOn())
+        currentCamera.node().setCameraMask(BitMask32.bit(bitmaskCode))
+        sky.show(BitMask32.bit(bitmaskCode))
+        
 
     def createLights(self):
         """Create an ambient light and a spotlight for shadows"""
@@ -346,6 +426,7 @@ class BulletApp(ShowBase):
     def gameLoop(self, task):
         dt = self.globalClock.getDt()
         self.controller.updatePlayer(dt)
+        self.controller2.updatePlayer(dt)
         self.world.doPhysics(dt)
         return task.cont
 
