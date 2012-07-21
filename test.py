@@ -25,17 +25,17 @@ class Vehicle(object):
         shape = BulletBoxShape(Vec3(0.6, 1.4, 0.5))
         ts = TransformState.makePos(Point3(0, 0, 0.5))
 
-        self.rigid_node = BulletRigidBodyNode("vehicle")
-        self.rigid_node.addShape(shape, ts)
-        self.rigid_node.setMass(800.0)
-        self.rigid_node.setDeactivationEnabled(False)
+        self.rigidNode = BulletRigidBodyNode("vehicle")
+        self.rigidNode.addShape(shape, ts)
+        self.rigidNode.setMass(800.0)
+        self.rigidNode.setDeactivationEnabled(False)
 
-        self.np = render.attachNewNode(self.rigid_node)
+        self.np = render.attachNewNode(self.rigidNode)
         self.np.setPos(position)
-        world.attachRigidBody(self.rigid_node)
+        world.attachRigidBody(self.rigidNode)
 
         # Vehicle
-        self.vehicle = BulletVehicle(world, self.rigid_node)
+        self.vehicle = BulletVehicle(world, self.rigidNode)
         self.vehicle.setCoordinateSystem(ZUp)
         world.attachVehicle(self.vehicle)
 
@@ -47,15 +47,15 @@ class Vehicle(object):
             for side, x in (("R", 0.7), ("L", -0.7)):
                 np = loader.loadModel("models/yugo/yugotire%s.egg" % side)
                 np.reparentTo(render)
-                is_front = fb == "F"
-                self.add_wheel(Point3(x, y, 0.3), is_front, np)
+                isFront = fb == "F"
+                self.addWheel(Point3(x, y, 0.3), isFront, np)
 
-    def add_wheel(self, position, is_front, np):
+    def addWheel(self, position, isFront, np):
         wheel = self.vehicle.createWheel()
 
         wheel.setNode(np.node())
         wheel.setChassisConnectionPointCs(position)
-        wheel.setFrontWheel(is_front)
+        wheel.setFrontWheel(isFront)
 
         wheel.setWheelDirectionCs(Vec3(0, 0, -1))
         wheel.setWheelAxleCs(Vec3(1, 0, 0))
@@ -77,7 +77,7 @@ class PlayerControl(DirectObject):
     def __init__(self, vehicle, camera):
         self.vehicle = vehicle
         self.camera = camera
-        self.input_state = defaultdict(bool)
+        self.inputState = defaultdict(bool)
 
         controls = {
                 "keyboard": {
@@ -89,48 +89,48 @@ class PlayerControl(DirectObject):
                 }
 
         for action, bind in controls["keyboard"].iteritems():
-            self.accept(bind, self.input_state.update, [{action: True}])
-            self.accept(bind + "-up", self.input_state.update, [{action: False}])
+            self.accept(bind, self.inputState.update, [{action: True}])
+            self.accept(bind + "-up", self.inputState.update, [{action: False}])
 
         # Initialise steering
         self.steering = 0.0  # in degrees
-        self.steering_lock = 45.0  # in degrees
-        self.steering_increment = 50.0  # in degrees/second
-        self.centering_rate = 50.0  # in degrees/second
+        self.steeringLock = 45.0  # in degrees
+        self.steeringIncrement = 50.0  # in degrees/second
+        self.centeringRate = 50.0  # in degrees/second
 
         # Initialise camera
-        self.update_camera(initial=True)
+        self.updateCamera(initial=True)
         self.camera.node().getLens().setFov(45)
 
-    def update_player(self, dt):
-        self.process_input(dt)
-        self.update_camera()
+    def updatePlayer(self, dt):
+        self.processInput(dt)
+        self.updateCamera()
 
-    def process_input(self, dt):
+    def processInput(self, dt):
         """Control the players car"""
 
-        engine_force = 0.0
-        brake_force = 0.0
+        engineForce = 0.0
+        brakeForce = 0.0
 
-        if self.input_state["forward"]:
-            engine_force = 2000.0
-        if self.input_state["brake"]:
-            brake_force = 100.0
+        if self.inputState["forward"]:
+            engineForce = 2000.0
+        if self.inputState["brake"]:
+            brakeForce = 100.0
 
-        if self.input_state["left"]:
-            self.steering += dt * self.steering_increment
-            self.steering = min(self.steering, self.steering_lock)
-        if self.input_state["right"]:
-            self.steering -= dt * self.steering_increment
-            self.steering = max(self.steering, -self.steering_lock)
-        elif not(self.input_state["left"]):
+        if self.inputState["left"]:
+            self.steering += dt * self.steeringIncrement
+            self.steering = min(self.steering, self.steeringLock)
+        if self.inputState["right"]:
+            self.steering -= dt * self.steeringIncrement
+            self.steering = max(self.steering, -self.steeringLock)
+        elif not(self.inputState["left"]):
             # gradually re-center the steering
             if self.steering > 0.0:
-                self.steering -= dt * self.centering_rate
+                self.steering -= dt * self.centeringRate
                 if self.steering < 0.0:
                     self.steering = 0.0
             elif self.steering < 0.0:
-                self.steering += dt * self.centering_rate
+                self.steering += dt * self.centeringRate
                 if self.steering > 0.0:
                     self.steering = 0.0
 
@@ -140,47 +140,47 @@ class PlayerControl(DirectObject):
         vehicle.setSteeringValue(self.steering, 1);
 
         # Apply engine and brake to rear wheels
-        vehicle.applyEngineForce(engine_force, 2);
-        vehicle.applyEngineForce(engine_force, 3);
-        vehicle.setBrake(brake_force, 2);
-        vehicle.setBrake(brake_force, 3);
+        vehicle.applyEngineForce(engineForce, 2);
+        vehicle.applyEngineForce(engineForce, 3);
+        vehicle.setBrake(brakeForce, 2);
+        vehicle.setBrake(brakeForce, 3);
 
-    def update_camera(self, initial=False):
+    def updateCamera(self, initial=False):
         """Reposition camera depending on the vehicle speed"""
 
-        min_distance = 8.0
-        max_distance = 13.0
-        min_height = 1.5
-        max_height = 3.0
-        max_speed = 30.0  # m/s
+        minDistance = 8.0
+        maxDistance = 13.0
+        minHeight = 1.5
+        maxHeight = 3.0
+        maxSpeed = 30.0  # m/s
 
         if initial:
-            distance = min_distance
-            height = min_height
+            distance = minDistance
+            height = minHeight
         else:
-            velocity = self.vehicle.rigid_node.getLinearVelocity()
+            velocity = self.vehicle.rigidNode.getLinearVelocity()
             speed = math.sqrt(sum(v ** 2 for v in velocity))
-            distance = (min_distance +
-                    (max_distance - min_distance) * speed / max_speed)
-            distance = min(max_distance, distance)
-            height = min_height + (max_height - min_height) * speed / max_speed
-            height = min(max_height, height)
+            distance = (minDistance +
+                    (maxDistance - minDistance) * speed / maxSpeed)
+            distance = min(maxDistance, distance)
+            height = minHeight + (maxHeight - minHeight) * speed / maxSpeed
+            height = min(maxHeight, height)
 
-        v_pos = self.vehicle.np.getPos()
-        heading_rad = self.vehicle.np.getH() * math.pi / 180.0
+        vPos = self.vehicle.np.getPos()
+        headingRad = self.vehicle.np.getH() * math.pi / 180.0
 
-        target_pos = v_pos + Vec3(
-                distance * math.sin(heading_rad),
-                -distance * math.cos(heading_rad),
+        targetPos = vPos + Vec3(
+                distance * math.sin(headingRad),
+                -distance * math.cos(headingRad),
                 height)
-        camera_pos = self.camera.getPos()
+        cameraPos = self.camera.getPos()
 
         if initial:
-            self.camera.setPos(target_pos)
+            self.camera.setPos(targetPos)
         else:
-            self.camera.setPos(camera_pos + (target_pos - camera_pos) * 0.1)
+            self.camera.setPos(cameraPos + (targetPos - cameraPos) * 0.1)
         # Look slightly ahead of the car
-        self.camera.lookAt(*v_pos)
+        self.camera.lookAt(*vPos)
         self.camera.setP(self.camera.getP() + 7)
 
 
@@ -194,33 +194,33 @@ class BulletApp(ShowBase):
         self.globalClock.setFrameRate(60)
         self.disableMouse()
 
-        self.create_lights()
+        self.createLights()
         self.render.setShaderAuto()
 
-        self.initialise_physics(debug=False)
+        self.initialisePhysics(debug=False)
 
-        self.create_ground()
-        self.create_skybox()
+        self.createGround()
+        self.createSkybox()
 
         # create a pyramid of barrels
         width = 0.8
         height = 1.0
-        num_rows = 5
-        for row in range(num_rows):
-            for column in range(num_rows - row):
-                row_start = 0.5 * width * (row - num_rows + 1)
+        numRows = 5
+        for row in range(numRows):
+            for column in range(numRows - row):
+                rowStart = 0.5 * width * (row - numRows + 1)
                 position = [
-                        row_start + column * width,
+                        rowStart + column * width,
                         0,
                         row * height]
-                self.create_barrel(position, height)
+                self.createBarrel(position, height)
 
-        self.taskMgr.add(self.game_loop, 'update')
+        self.taskMgr.add(self.gameLoop, 'update')
 
         self.vehicle = Vehicle((0.0, -15.0, 0.5), self.render, self.world)
         self.controller = PlayerControl(self.vehicle, self.cam)
 
-    def initialise_physics(self, debug=False):
+    def initialisePhysics(self, debug=False):
         """Create Bullet world for physics objects"""
 
         self.world = BulletWorld()
@@ -234,7 +234,7 @@ class BulletApp(ShowBase):
             self.debugNP.node().showNormals(True)
             self.world.setDebugNode(self.debugNP.node())
 
-    def create_barrel(self, position, height=1.0):
+    def createBarrel(self, position, height=1.0):
         """
         Create a barrel with the centre of the base at the given position
         """
@@ -242,52 +242,52 @@ class BulletApp(ShowBase):
         # Get barrel textures
         colour = random.choice(("black", "blue", "green", "red", "yellow"))
         texture = self.loader.loadTexture("models/barrel/diffus_" + colour + ".tga")
-        normal_map = self.loader.loadTexture("models/barrel/normal_hard_bumps.tga")
-        specular_map = self.loader.loadTexture("models/barrel/specular_rust.tga")
-        nm_ts = TextureStage('normal')
-        nm_ts.setMode(TextureStage.MNormal)
-        s_ts = TextureStage('specular')
-        s_ts.setMode(TextureStage.MGloss)
+        normalMap = self.loader.loadTexture("models/barrel/normal_hard_bumps.tga")
+        specularMap = self.loader.loadTexture("models/barrel/specular_rust.tga")
+        nmTs = TextureStage('normal')
+        nmTs.setMode(TextureStage.MNormal)
+        sTs = TextureStage('specular')
+        sTs.setMode(TextureStage.MGloss)
 
         # Create graphical model for barrel
         barrel = self.loader.loadModel("models/barrel/metal_barrel.egg")
         barrel.setTexture(texture)
-        barrel.setTexture(nm_ts, normal_map)
-        barrel.setTexture(s_ts, specular_map)
-        barrel_min, barrel_max = barrel.getTightBounds()
+        barrel.setTexture(nmTs, normalMap)
+        barrel.setTexture(sTs, specularMap)
+        barrelMin, barrelMax = barrel.getTightBounds()
 
         # Y is the cylinder axis here
-        scale = height  / (barrel_max[2] - barrel_min[2])
-        radius = (barrel_max[0] - barrel_min[0]) * scale * 0.5
+        scale = height  / (barrelMax[2] - barrelMin[2])
+        radius = (barrelMax[0] - barrelMin[0]) * scale * 0.5
 
         # Create a barrel for physics
-        barrel_shape = BulletCylinderShape(radius, height, ZUp)
-        barrel_node = BulletRigidBodyNode('barrel')
-        barrel_node.setMass(8.0)
-        barrel_node.setFriction(100.0)
-        barrel_node.addShape(barrel_shape)
+        barrelShape = BulletCylinderShape(radius, height, ZUp)
+        barrelNode = BulletRigidBodyNode('barrel')
+        barrelNode.setMass(8.0)
+        barrelNode.setFriction(100.0)
+        barrelNode.addShape(barrelShape)
 
-        np = self.render.attachNewNode(barrel_node)
+        np = self.render.attachNewNode(barrelNode)
         position[2] = position[2] + 0.5 * height
         np.setPos(*position)
         np.setHpr(0, 0, 0)
-        self.world.attachRigidBody(barrel_node)
+        self.world.attachRigidBody(barrelNode)
 
         barrel.setScale(scale, scale, scale)
         barrel.setPos(0.0, 0.0, -0.5)
         barrel.setHpr(0, 0, 0)
         barrel.reparentTo(np)
 
-    def create_ground(self):
+    def createGround(self):
         """Create ground model and physical model"""
 
         # Create shape for physics
-        ground_shape = BulletPlaneShape(Vec3(0, 0, 1), 0)
-        ground_node = BulletRigidBodyNode('ground')
-        ground_node.addShape(ground_shape)
-        np = self.render.attachNewNode(ground_node)
+        groundShape = BulletPlaneShape(Vec3(0, 0, 1), 0)
+        groundNode = BulletRigidBodyNode('ground')
+        groundNode.addShape(groundShape)
+        np = self.render.attachNewNode(groundNode)
         np.setPos(0, 0, 0)
-        self.world.attachRigidBody(ground_node)
+        self.world.attachRigidBody(groundNode)
 
         # Create graphics
         diffuse = self.loader.loadTexture("models/floor/dirt.png")
@@ -295,7 +295,7 @@ class BulletApp(ShowBase):
         diffuse.setWrapV(Texture.WMRepeat)
 
         size = 400.
-        texture_size = 6.0
+        textureSize = 6.0
         # Could use the CardMaker but this doesn't create the
         # tangents and binormals required for the normal map
         floor = self.loader.loadModel("models/floor/flat.egg")
@@ -304,11 +304,11 @@ class BulletApp(ShowBase):
         floor.setHpr(0, -90, 0)
         floor.setTexture(diffuse)
         ts = TextureStage.getDefault()
-        floor.setTexScale(ts, size / texture_size, size / texture_size)
+        floor.setTexScale(ts, size / textureSize, size / textureSize)
 
         floor.reparentTo(np)
 
-    def create_skybox(self):
+    def createSkybox(self):
         """
         Create a skybox
         """
@@ -322,7 +322,7 @@ class BulletApp(ShowBase):
         sky.reparentTo(self.cam)
         sky.setCompass()
 
-    def create_lights(self):
+    def createLights(self):
         """Create an ambient light and a spotlight for shadows"""
         self.render.clearLight()
 
@@ -343,9 +343,9 @@ class BulletApp(ShowBase):
         spotlightNP.lookAt(0, 0, 0)
         self.render.setLight(spotlightNP)
 
-    def game_loop(self, task):
+    def gameLoop(self, task):
         dt = self.globalClock.getDt()
-        self.controller.update_player(dt)
+        self.controller.updatePlayer(dt)
         self.world.doPhysics(dt)
         return task.cont
 
