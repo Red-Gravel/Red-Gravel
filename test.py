@@ -8,11 +8,15 @@ from direct.showbase.ShowBase import ShowBase
 from direct.showbase.DirectObject import DirectObject
 from panda3d.core import Vec3, Vec4, Point3
 from panda3d.core import AmbientLight, Spotlight
-from pandac.PandaModules import ClockObject
 from panda3d.core import Texture, TextureStage
 from panda3d.core import TransformState
+from panda3d.core import GeoMipTerrain
+from panda3d.core import PNMImage, Filename
+from pandac.PandaModules import ClockObject
 from panda3d.bullet import BulletWorld
-from panda3d.bullet import BulletPlaneShape, BulletCylinderShape, BulletBoxShape
+from panda3d.bullet import (
+        BulletPlaneShape, BulletCylinderShape,
+        BulletBoxShape, BulletHeightfieldShape)
 from panda3d.bullet import BulletRigidBodyNode, BulletDebugNode
 from panda3d.bullet import BulletVehicle
 from panda3d.bullet import XUp, YUp, ZUp
@@ -279,34 +283,59 @@ class BulletApp(ShowBase):
         barrel.reparentTo(np)
 
     def createGround(self):
-        """Create ground model and physical model"""
+        """Create ground using a heightmap"""
 
-        # Create shape for physics
-        groundShape = BulletPlaneShape(Vec3(0, 0, 1), 0)
-        groundNode = BulletRigidBodyNode('ground')
-        groundNode.addShape(groundShape)
-        np = self.render.attachNewNode(groundNode)
+        # Create heightfield for physics
+        maxHeight = 10.0
+
+        # Image needs to have dimensions that are a power of 2 + 1
+        heightMap = PNMImage('models/floor/elevation.png')
+        xdim = heightMap.getXSize()
+        ydim = heightMap.getYSize()
+        shape = BulletHeightfieldShape(heightMap, maxHeight, ZUp)
+        shape.setUseDiamondSubdivision(True)
+
+        np = self.render.attachNewNode(BulletRigidBodyNode('terrain'))
+        np.node().addShape(shape)
         np.setPos(0, 0, 0)
-        self.world.attachRigidBody(groundNode)
+        self.world.attachRigidBody(np.node())
 
-        # Create graphics
-        diffuse = self.loader.loadTexture("models/floor/dirt.png")
+        # Create graphical terrain from same height map
+        self.terrain = GeoMipTerrain('terrain')
+        self.terrain.setHeightfield(heightMap)
+
+        self.terrain.setBlockSize(32)
+        self.terrain.setBruteforce(True)
+        rootNP = self.terrain.getRoot()
+        rootNP.reparentTo(self.render)
+        rootNP.setSz(maxHeight)
+
+        offset = xdim / 2.0 - 0.5
+        rootNP.setPos(-offset, -offset, -maxHeight / 2.0)
+        self.terrain.generate()
+
+        # Apply texture
+        diffuse = self.loader.loadTexture(Filename("models/floor/dirt.png"))
         diffuse.setWrapU(Texture.WMRepeat)
         diffuse.setWrapV(Texture.WMRepeat)
-
-        size = 400.
+        rootNP.setTexture(diffuse)
         textureSize = 6.0
-        # Could use the CardMaker but this doesn't create the
-        # tangents and binormals required for the normal map
-        floor = self.loader.loadModel("models/floor/flat.egg")
-        floor.setScale(size, 1, size)
-        floor.setPos(-size / 2., -size / 2., 0)
-        floor.setHpr(0, -90, 0)
-        floor.setTexture(diffuse)
         ts = TextureStage.getDefault()
-        floor.setTexScale(ts, size / textureSize, size / textureSize)
+        rootNP.setTexScale(ts, xdim / textureSize, ydim / textureSize)
 
-        floor.reparentTo(np)
+        # Create planes around area to prevent player flying off the edge
+        sides = (
+                (Vec3(1, 0, 0), -xdim / 2.0),
+                (Vec3(-1, 0, 0), -xdim / 2.0),
+                (Vec3(0, 1, 0), -ydim / 2.0),
+                (Vec3(0, -1, 0), -ydim / 2.0),
+                )
+        for sideNum, side in enumerate(sides):
+            normal, offset = side
+            sideShape = BulletPlaneShape(normal, offset)
+            sideNode = BulletRigidBodyNode('side%d' % sideNum)
+            sideNode.addShape(sideShape)
+            self.world.attachRigidBody(sideNode)
 
     def createSkybox(self):
         """
@@ -316,7 +345,7 @@ class BulletApp(ShowBase):
         sky = self.loader.loadModel("models/sky/cube.egg")
         diffuse = self.loader.loadTexture("models/sky/skymap.png")
         sky.setTexture(diffuse)
-        sky.setScale(200)
+        sky.setScale(270)
         # Get it to follow the camera so it feels as if it's infinitely
         # far away, but call setCompass so it rotates with the world
         sky.reparentTo(self.cam)
