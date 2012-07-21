@@ -95,13 +95,31 @@ class PlayerControl(DirectObject):
                         }
                     }
         #added for multiplayer
-        if controlSet == 2:
+        if controlSet == 1:
             controls = {
                     "keyboard": {
                         "forward": "w",
                         "brake": "s",
                         "left": "a",
                         "right": "d",
+                        }
+                    }
+        elif controlSet == 2:
+            controls = {
+                    "keyboard": {
+                        "forward": "t",
+                        "brake": "g",
+                        "left": "f",
+                        "right": "h",
+                        }
+                    }
+        elif controlSet == 3:
+            controls = {
+                    "keyboard": {
+                        "forward": "o",
+                        "brake": "l",
+                        "left": "k",
+                        "right": ";",
                         }
                     }
 
@@ -245,38 +263,119 @@ class BulletApp(ShowBase):
         #disable default cam so that we can have multiplayer
         base.camNode.setActive(False)
         
+        #number of players to set up for
+        #would like to move this to an argument or parameter
+        self.numberOfPlayers = 4
+        
         #moved player setup out to its own method
-        self.setupPlayers()
+        self.setupPlayers(self.numberOfPlayers)
     
     
     
-    def setupPlayers(self):
+    def setupPlayers(self, numberOfPlayers):
         """
         Method to set up player, camera and skybox
         Sets up two player splitscreen
         TODO: Needs reorganising, removal of hardcoding
         """
-        #set up first player camera
-        self.camera1=self.createCamera((0.,1,0.5,1),(0,-8,3)) 
-        self.vehicle = Vehicle((0.0, -15.0, 0.5), self.render, self.world)
-        self.controller = PlayerControl(self.vehicle, self.camera1, 1)
-        self.createSkybox(self.camera1,1)
+        self.playerCameras = []
+        self.playerVehicles = []
+        self.playerControllers = []
+        self.playerInputKeys = range(numberOfPlayers)
+        #default camera position bound to each car
+        cameraPosition = (0,-8,3)
+        #default vehicle position
+        vehiclePosition = (0.0, -15.0, 0.5)
         
-        self.camera2=self.createCamera((0.,1,0,0.5),(0,-8,3))  
-        self.vehicle2 = Vehicle((0.0, -30., 0.5), self.render, self.world)
-        self.controller2 = PlayerControl(self.vehicle2, self.camera2, 2)
-        self.createSkybox(self.camera2,2)
+        #single player display setup - default
+        displayXStart = 0.0
+        displayXEnd = 1.0
+        displayYStart = 0.0
+        displayYEnd = 1.0
+        
+        
+        #I am not proud of myself for this... There has to be a better way using maths
+        # But it's nearly 2am and I'll figure it out tomorrow
+        for i in xrange(numberOfPlayers):            
+            if numberOfPlayers == 2:
+                if i == 0:#player 1, indexes from 0
+                    displayXStart = 0.0#don't need this but it's safer to have it'
+                    displayXEnd = 1.0
+                    displayYStart = 0.5
+                    displayYEnd = 1.0
+                else:
+                    displayXStart = 0.0#don't need this but it's safer to have it'
+                    displayXEnd = 1.0
+                    displayYStart = 0.0
+                    displayYEnd = 0.5
+                    vehiclePosition = (0.0, -25.0, 0.5)
+            elif numberOfPlayers == 3:
+                if i == 0: #top of screen
+                    displayXStart = 0.0#don't need this but it's safer to have it'
+                    displayXEnd = 1.0
+                    displayYStart = 0.5
+                    displayYEnd = 1.0
+                elif i == 1: #p2, bottom left
+                    displayXStart = 0.0 
+                    displayXEnd = 0.5
+                    displayYStart = 0.0
+                    displayYEnd = 0.5
+                    vehiclePosition = (0.0, -25.0, 0.5)
+                else: #bottom right
+                    displayXStart = 0.5
+                    displayXEnd = 1.0
+                    displayYStart = 0.0
+                    displayYEnd = 0.5
+                    vehiclePosition = (0.0, 15.0, 0.5)
+            elif numberOfPlayers == 4:
+                if i == 0: #p1, top left
+                    displayXStart = 0.0#don't need this but it's safer to have it'
+                    displayXEnd = 0.5
+                    displayYStart = 0.5
+                    displayYEnd = 1.0
+                elif i == 1: #p2, top right
+                    displayXStart = 0.5 
+                    displayXEnd = 1.0
+                    displayYStart = 0.5
+                    displayYEnd = 1.0
+                    vehiclePosition = (0.0, -25.0, 0.5)
+                elif i == 2: #p3, bottom left
+                    displayXStart = 0.0
+                    displayXEnd = 0.5
+                    displayYStart = 0.0
+                    displayYEnd = 0.5
+                    vehiclePosition = (0.0, 15.0, 0.5)
+                else: #else p4, bottom right
+                    displayXStart = 0.5
+                    displayXEnd = 1.0
+                    displayYStart = 0.0
+                    displayYEnd = 0.5
+                    vehiclePosition = (0.0, 25.0, 0.5)
+                
+            #setup display area for this player's camera
+            displayBox = (displayXStart, displayXEnd, displayYStart, displayYEnd)
+            #set up camera with display area above and default camera position
+            camera = self.createCamera(displayBox, cameraPosition)
+            self.playerCameras.append(camera)
+            #set up player car
+            vehicle = Vehicle(vehiclePosition, self.render, self.world)
+            self.playerVehicles.append(vehicle)
+            #set up player controller with car, camera and keyset
+            playerController = PlayerControl(self.playerVehicles[i], self.playerCameras[i], self.playerInputKeys[i])
+            self.playerControllers.append(playerController)
+            #set up skybox for this particular camera set and hide from other cameras
+            self.createSkybox(self.playerCameras[i], self.playerInputKeys[i]) #can use inputkey code for bitmaskCode as it will be unique
+
+            
 
 
-
-
-    def windowEventSetup( self ): 
+    def windowEventSetup(self): 
         """
         Method to bind window events (resizing etc) to windowEventHandler method
         """
         self.accept('window-event', self.windowEventHandler) 
 
-    def windowEventHandler( self, window=None ): 
+    def windowEventHandler(self, window = None): 
         """ 
         Called when the panda window is modified to update FOV and aspect ratio
         TODO fix hardcoding for camera names
@@ -287,16 +386,16 @@ class BulletApp(ShowBase):
         wp = window.getProperties() 
         windowWidth = wp.getXSize() 
         windowHeight = wp.getYSize() 
-        self.camera1.node().getLens().setAspectRatio(windowWidth/(windowHeight/2)) 
-        self.camera1.node().getLens().setFov(60)
-        self.camera2.node().getLens().setAspectRatio(windowWidth/(windowHeight/2)) 
-        self.camera2.node().getLens().setFov(60)
-
+        for i in self.playerCameras:  #added to allow for changing player number
+            #since window size has changed we need to update the aspect ratio and FOV
+            i.node().getLens().setAspectRatio(windowWidth/(windowHeight/2)) 
+            i.node().getLens().setFov(60)
 
 
     def createCamera(self,dispRegion,pos): 
         """
         Method to create a camera. Takes displayRegion and a position tuple.
+        Sets aspect ratio based on window properties and also sets FOV
         """
         camera=base.makeCamera(base.win,displayRegion=dispRegion) 
         windowWidth = base.win.getXSize()
@@ -438,7 +537,9 @@ class BulletApp(ShowBase):
         # far away, but call setCompass so it rotates with the world
         sky.reparentTo(currentCamera)
         sky.setCompass()
+        # hide skybox from other players
         sky.hide(BitMask32.allOn())
+        #show only to this player's camera
         currentCamera.node().setCameraMask(BitMask32.bit(bitmaskCode))
         sky.show(BitMask32.bit(bitmaskCode))
         
@@ -466,8 +567,8 @@ class BulletApp(ShowBase):
 
     def gameLoop(self, task):
         dt = self.globalClock.getDt()
-        self.controller.updatePlayer(dt)
-        self.controller2.updatePlayer(dt)
+        for i in self.playerControllers: #added to allow for changing player number
+            i.updatePlayer(dt)
         self.world.doPhysics(dt)
         return task.cont
 
