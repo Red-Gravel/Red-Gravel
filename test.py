@@ -290,19 +290,12 @@ class BulletApp(ShowBase):
         self.world.attachRigidBody(ground_node)
 
         # Create graphics
-        diffuse = self.loader.loadTexture("models/floor/diffuse.tga")
-        normal_map = self.loader.loadTexture("models/floor/normal.tga")
-        specular_map = self.loader.loadTexture("models/floor/specular.tga")
-        for texture in (diffuse, normal_map, specular_map):
-            texture.setWrapU(Texture.WMRepeat)
-            texture.setWrapV(Texture.WMRepeat)
-        nm_ts = TextureStage('normal')
-        nm_ts.setMode(TextureStage.MNormal)
-        s_ts = TextureStage('specular')
-        s_ts.setMode(TextureStage.MGloss)
+        diffuse = self.loader.loadTexture("models/floor/dirt.png")
+        diffuse.setWrapU(Texture.WMRepeat)
+        diffuse.setWrapV(Texture.WMRepeat)
 
         size = 400.
-        texture_size = 12.0
+        texture_size = 6.0
         # Could use the CardMaker but this doesn't create the
         # tangents and binormals required for the normal map
         floor = self.loader.loadModel("models/floor/flat.egg")
@@ -310,10 +303,8 @@ class BulletApp(ShowBase):
         floor.setPos(-size / 2., -size / 2., 0)
         floor.setHpr(0, -90, 0)
         floor.setTexture(diffuse)
-        floor.setTexture(nm_ts, normal_map)
-        floor.setTexture(s_ts, specular_map)
-        for ts in (TextureStage.getDefault(), nm_ts, s_ts):
-            floor.setTexScale(ts, size / texture_size, size / texture_size)
+        ts = TextureStage.getDefault()
+        floor.setTexScale(ts, size / texture_size, size / texture_size)
 
         floor.reparentTo(np)
 
