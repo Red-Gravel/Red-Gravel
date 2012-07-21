@@ -101,16 +101,19 @@ class PlayerControl(DirectObject):
         self.steeringLock = 45.0  # in degrees
         self.steeringIncrement = 50.0  # in degrees/second
         self.centeringRate = 50.0  # in degrees/second
+        self.reversing = False
 
         # Initialise camera
         self.updateCamera(initial=True)
         self.camera.node().getLens().setFov(45)
 
     def updatePlayer(self, dt):
-        self.processInput(dt)
-        self.updateCamera()
+        velocity = self.vehicle.rigidNode.getLinearVelocity()
+        speed = math.sqrt(sum(v ** 2 for v in velocity))
+        self.processInput(dt, speed=speed)
+        self.updateCamera(speed=speed)
 
-    def processInput(self, dt):
+    def processInput(self, dt, speed=0.0):
         """Control the players car"""
 
         engineForce = 0.0
@@ -119,7 +122,14 @@ class PlayerControl(DirectObject):
         if self.inputState["forward"]:
             engineForce = 2000.0
         if self.inputState["brake"]:
-            brakeForce = 100.0
+            if speed < 0.5 or self.reversing:
+                # If we're stopped, then start reversing
+                engineForce = -1000.0
+                self.reversing = True
+            else:
+                brakeForce = 100.0
+        else:
+            self.reversing = False
 
         if self.inputState["left"]:
             self.steering += dt * self.steeringIncrement
@@ -149,7 +159,7 @@ class PlayerControl(DirectObject):
         vehicle.setBrake(brakeForce, 2);
         vehicle.setBrake(brakeForce, 3);
 
-    def updateCamera(self, initial=False):
+    def updateCamera(self, speed=0.0, initial=False):
         """Reposition camera depending on the vehicle speed"""
 
         minDistance = 8.0
@@ -162,8 +172,6 @@ class PlayerControl(DirectObject):
             distance = minDistance
             height = minHeight
         else:
-            velocity = self.vehicle.rigidNode.getLinearVelocity()
-            speed = math.sqrt(sum(v ** 2 for v in velocity))
             distance = (minDistance +
                     (maxDistance - minDistance) * speed / maxSpeed)
             distance = min(maxDistance, distance)
