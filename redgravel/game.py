@@ -1,11 +1,9 @@
-#!/usr/bin/env python
 import random
 import time
 import math
 from collections import defaultdict
 import sys
 
-from direct.showbase.ShowBase import ShowBase
 from direct.showbase.DirectObject import DirectObject
 from panda3d.core import Vec3, Vec4, Point3
 from panda3d.core import AmbientLight, Spotlight
@@ -26,7 +24,9 @@ from panda3d.bullet import XUp, YUp, ZUp
 
 
 class Vehicle(object):
-    def __init__(self, position, render, world):
+    def __init__(self, position, render, world, base):
+        loader = base.loader
+
         # Chassis uses a simple box shape
         # Note that these are half-extents:
         shape = BulletBoxShape(Vec3(0.6, 1.4, 0.5))
@@ -227,16 +227,24 @@ class PlayerControl(DirectObject):
         self.camera.setP(self.camera.getP() + 7)
 
 
-class BulletApp(ShowBase):
-    def __init__(self):
-        ShowBase.__init__(self)
+class World(object):
+    def __init__(self, base, numberOfPlayers):
+        self.base = base
+        self.render = base.render
+        self.taskMgr = base.taskMgr
+        self.loader = base.loader
+
         self.windowEventSetup()
 
-        self.setFrameRateMeter(True)
+        self.base.setFrameRateMeter(True)
         self.globalClock = ClockObject.getGlobalClock()
         self.globalClock.setMode(ClockObject.MLimited)
         self.globalClock.setFrameRate(60)
-        self.disableMouse()
+        self.base.disableMouse()
+
+        if not 0 < numberOfPlayers < 5:
+            raise ValueError("Number of players must be from 1 to 4")
+        self.numberOfPlayers = numberOfPlayers
 
         self.createLights()
         self.render.setShaderAuto()
@@ -258,20 +266,20 @@ class BulletApp(ShowBase):
                         row * height]
                 self.createBarrel(position, height)
 
-        self.taskMgr.add(self.gameLoop, 'update')
-        
         #disable default cam so that we can have multiplayer
         base.camNode.setActive(False)
-        
-        #number of players to set up for
-        #would like to move this to an argument or parameter
-        self.numberOfPlayers = 4
-        
+
         #moved player setup out to its own method
         self.setupPlayers(self.numberOfPlayers)
-    
-    
-    
+
+    def run(self):
+        """
+        Start running the game loop by adding it
+        to the task manager
+        """
+
+        self.taskMgr.add(self.gameLoop, 'update')
+
     def setupPlayers(self, numberOfPlayers):
         """
         Method to set up player, camera and skybox
@@ -358,7 +366,7 @@ class BulletApp(ShowBase):
             camera = self.createCamera(displayBox, cameraPosition)
             self.playerCameras.append(camera)
             #set up player car
-            vehicle = Vehicle(vehiclePosition, self.render, self.world)
+            vehicle = Vehicle(vehiclePosition, self.render, self.world, self.base)
             self.playerVehicles.append(vehicle)
             #set up player controller with car, camera and keyset
             playerController = PlayerControl(self.playerVehicles[i], self.playerCameras[i], self.playerInputKeys[i])
@@ -366,14 +374,11 @@ class BulletApp(ShowBase):
             #set up skybox for this particular camera set and hide from other cameras
             self.createSkybox(self.playerCameras[i], self.playerInputKeys[i]) #can use inputkey code for bitmaskCode as it will be unique
 
-            
-
-
-    def windowEventSetup(self): 
+    def windowEventSetup( self ):
         """
         Method to bind window events (resizing etc) to windowEventHandler method
         """
-        self.accept('window-event', self.windowEventHandler) 
+        self.base.accept('window-event', self.windowEventHandler)
 
     def windowEventHandler(self, window = None): 
         """ 
@@ -571,7 +576,3 @@ class BulletApp(ShowBase):
             i.updatePlayer(dt)
         self.world.doPhysics(dt)
         return task.cont
-
-
-app = BulletApp()
-app.run()
