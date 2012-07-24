@@ -1,19 +1,24 @@
 #!/usr/bin/env python
 from direct.showbase.ShowBase import ShowBase
 from pandac.PandaModules import WindowProperties
+from panda3d.core import loadPrcFileData
 
 from redgravel.menu import MainMenu
+
+
+# Set config variables before opening a window.
+# Eventually we will store these in files in the
+# user's data directory, with a default config file
+# supplied with the game
+config = """
+win-size 1024 768
+window-title Red Gravel
+"""
 
 
 class Game(ShowBase):
     def __init__(self):
         ShowBase.__init__(self)
-
-        windowProperties = WindowProperties(self.win.getProperties())
-        windowProperties.setTitle("Red Gravel")
-        #windowProperties.setFullscreen(True)
-        windowProperties.setSize(1024, 768)
-        self.win.requestProperties(windowProperties)
 
         # Start the main menu,
         # which can start a game
@@ -21,5 +26,6 @@ class Game(ShowBase):
 
 
 if __name__ == '__main__':
+    loadPrcFileData("defaultConfig", config)
     gameApp = Game()
     gameApp.run()
