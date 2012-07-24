@@ -5,6 +5,7 @@ from collections import defaultdict
 import sys
 
 from direct.showbase.DirectObject import DirectObject
+from direct.filter.CommonFilters import CommonFilters
 from panda3d.core import Vec3, Vec4, Point3
 from panda3d.core import AmbientLight, Spotlight
 from panda3d.core import Texture, TextureStage
@@ -236,6 +237,11 @@ class World(object):
 
         self.windowEventSetup()
 
+        # Create separate nodes so that shaders apply to
+        # stuff in the worldRender but not the outsideWorldRender
+        self.worldRender = render.attachNewNode('world')
+        self.outsideWorldRender = render.attachNewNode('world')
+
         self.base.setFrameRateMeter(True)
         self.globalClock = ClockObject.getGlobalClock()
         self.globalClock.setMode(ClockObject.MLimited)
@@ -247,7 +253,6 @@ class World(object):
         self.numberOfPlayers = numberOfPlayers
 
         self.createLights()
-        self.render.setShaderAuto()
 
         self.initialisePhysics(debug=False)
 
@@ -271,6 +276,9 @@ class World(object):
 
         #moved player setup out to its own method
         self.setupPlayers(self.numberOfPlayers)
+
+        # Set up shaders for shadows and cartoon outline
+        self.setupShaders()
 
     def run(self):
         """
@@ -366,7 +374,7 @@ class World(object):
             camera = self.createCamera(displayBox, cameraPosition)
             self.playerCameras.append(camera)
             #set up player car
-            vehicle = Vehicle(vehiclePosition, self.render, self.world, self.base)
+            vehicle = Vehicle(vehiclePosition, self.worldRender, self.world, self.base)
             self.playerVehicles.append(vehicle)
             #set up player controller with car, camera and keyset
             playerController = PlayerControl(self.playerVehicles[i], self.playerCameras[i], self.playerInputKeys[i])
@@ -420,7 +428,7 @@ class World(object):
         self.world = BulletWorld()
         self.world.setGravity(Vec3(0, 0, -9.81))
         if debug:
-            self.debugNP = self.render.attachNewNode(BulletDebugNode('Debug'))
+            self.debugNP = self.outsideWorldRender.attachNewNode(BulletDebugNode('Debug'))
             self.debugNP.show()
             self.debugNP.node().showWireframe(True)
             self.debugNP.node().showConstraints(True)
@@ -461,7 +469,7 @@ class World(object):
         barrelNode.setFriction(100.0)
         barrelNode.addShape(barrelShape)
 
-        np = self.render.attachNewNode(barrelNode)
+        np = self.worldRender.attachNewNode(barrelNode)
         position[2] = position[2] + 0.5 * height
         np.setPos(*position)
         np.setHpr(0, 0, 0)
@@ -485,7 +493,8 @@ class World(object):
         shape = BulletHeightfieldShape(heightMap, maxHeight, ZUp)
         shape.setUseDiamondSubdivision(True)
 
-        np = self.render.attachNewNode(BulletRigidBodyNode('terrain'))
+        np = self.outsideWorldRender.attachNewNode(
+            BulletRigidBodyNode('terrain'))
         np.node().addShape(shape)
         np.setPos(0, 0, 0)
         self.world.attachRigidBody(np.node())
@@ -497,7 +506,7 @@ class World(object):
         self.terrain.setBlockSize(32)
         self.terrain.setBruteforce(True)
         rootNP = self.terrain.getRoot()
-        rootNP.reparentTo(self.render)
+        rootNP.reparentTo(self.worldRender)
         rootNP.setSz(maxHeight)
 
         offset = xdim / 2.0 - 0.5
@@ -551,12 +560,13 @@ class World(object):
 
     def createLights(self):
         """Create an ambient light and a spotlight for shadows"""
+
         self.render.clearLight()
 
         alight = AmbientLight('ambientLight')
         alight.setColor(Vec4(0.7, 0.7, 0.7, 1))
-        alightNP = self.render.attachNewNode(alight)
-        self.render.setLight(alightNP)
+        alightNP = self.worldRender.attachNewNode(alight)
+        self.worldRender.setLight(alightNP)
 
         # Create a spotlight for shadows
         # Could also use a directional light with the automatic shadows
@@ -565,10 +575,30 @@ class World(object):
         spotlight.setShadowCaster(True, 2048, 2048)
         spotlight.getLens().setFov(40)
         spotlight.getLens().setNearFar(2, 50)
-        spotlightNP = self.render.attachNewNode(spotlight)
+        spotlightNP = self.worldRender.attachNewNode(spotlight)
         spotlightNP.setPos(-20, -20, 35)
         spotlightNP.lookAt(0, 0, 0)
-        self.render.setLight(spotlightNP)
+        self.worldRender.setLight(spotlightNP)
+
+    def setupShaders(self):
+        """
+        Creates shaders for cartoon outline and enables
+        shaders for shadows
+        """
+
+        if (self.base.win.getGsg().getSupportsBasicShaders() == 0):
+            return
+
+        thickness = 1.0
+        for camera in self.playerCameras:
+            self.filters = CommonFilters(self.base.win, camera)
+            filterEnabled = self.filters.setCartoonInk(separation=thickness)
+            if (filterEnabled == False):
+                # Couldn't enable filter, video card probably
+                # doesn't support filter
+                return
+
+        self.worldRender.setShaderAuto()
 
     def gameLoop(self, task):
         dt = self.globalClock.getDt()
