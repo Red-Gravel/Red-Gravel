@@ -47,13 +47,13 @@ class Vehicle(object):
         self.vehicle.setCoordinateSystem(ZUp)
         world.attachVehicle(self.vehicle)
 
-        self.yugoNP = loader.loadModel("models/yugo/yugo.egg")
+        self.yugoNP = loader.loadModel("data/vehicles/yugo/yugo.egg")
         self.yugoNP.reparentTo(self.np)
 
         # Create wheels
         for fb, y in (("F", 1.05), ("B", -1.05)):
             for side, x in (("R", 0.7), ("L", -0.7)):
-                np = loader.loadModel("models/yugo/yugotire%s.egg" % side)
+                np = loader.loadModel("data/vehicles/yugo/yugotire%s.egg" % side)
                 np.reparentTo(render)
                 isFront = fb == "F"
                 self.addWheel(Point3(x, y, 0.3), isFront, np)
@@ -443,16 +443,16 @@ class World(object):
 
         # Get barrel textures
         colour = random.choice(("black", "blue", "green", "red", "yellow"))
-        texture = self.loader.loadTexture("models/barrel/diffus_" + colour + ".tga")
-        normalMap = self.loader.loadTexture("models/barrel/normal_hard_bumps.tga")
-        specularMap = self.loader.loadTexture("models/barrel/specular_rust.tga")
+        texture = self.loader.loadTexture("data/models/barrel/diffus_" + colour + ".tga")
+        normalMap = self.loader.loadTexture("data/models/barrel/normal_hard_bumps.tga")
+        specularMap = self.loader.loadTexture("data/models/barrel/specular_rust.tga")
         nmTs = TextureStage('normal')
         nmTs.setMode(TextureStage.MNormal)
         sTs = TextureStage('specular')
         sTs.setMode(TextureStage.MGloss)
 
         # Create graphical model for barrel
-        barrel = self.loader.loadModel("models/barrel/metal_barrel.egg")
+        barrel = self.loader.loadModel("data/models/barrel/metal_barrel.egg")
         barrel.setTexture(texture)
         barrel.setTexture(nmTs, normalMap)
         barrel.setTexture(sTs, specularMap)
@@ -487,7 +487,7 @@ class World(object):
         maxHeight = 10.0
 
         # Image needs to have dimensions that are a power of 2 + 1
-        heightMap = PNMImage('models/floor/elevation.png')
+        heightMap = PNMImage('data/models/floor/elevation.png')
         xdim = heightMap.getXSize()
         ydim = heightMap.getYSize()
         shape = BulletHeightfieldShape(heightMap, maxHeight, ZUp)
@@ -514,7 +514,7 @@ class World(object):
         self.terrain.generate()
 
         # Apply texture
-        diffuse = self.loader.loadTexture(Filename("models/floor/dirt.png"))
+        diffuse = self.loader.loadTexture(Filename("data/models/floor/dirt.png"))
         diffuse.setWrapU(Texture.WMRepeat)
         diffuse.setWrapV(Texture.WMRepeat)
         rootNP.setTexture(diffuse)
@@ -543,8 +543,8 @@ class World(object):
         TODO: remove bitmaskCode or make it more modular to reduce coupling
         """
 
-        sky = self.loader.loadModel("models/sky/cube.egg")
-        diffuse = self.loader.loadTexture("models/sky/skymap.png")
+        sky = self.loader.loadModel("data/models/sky/cube.egg")
+        diffuse = self.loader.loadTexture("data/models/sky/skymap.png")
         sky.setTexture(diffuse)
         sky.setScale(270)
         # Get it to follow the camera so it feels as if it's infinitely
