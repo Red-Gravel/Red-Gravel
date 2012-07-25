@@ -5,6 +5,7 @@ from collections import defaultdict
 import sys
 
 from direct.showbase.DirectObject import DirectObject
+from direct.showbase import Audio3DManager
 from direct.filter.CommonFilters import CommonFilters
 from panda3d.core import Vec3, Vec4, Point3
 from panda3d.core import AmbientLight, Spotlight
@@ -26,6 +27,7 @@ from panda3d.bullet import XUp, YUp, ZUp
 
 class Vehicle(object):
     def __init__(self, position, render, world, base):
+        self.base = base
         loader = base.loader
 
         # Chassis uses a simple box shape
@@ -42,18 +44,21 @@ class Vehicle(object):
         self.np.setPos(position)
         world.attachRigidBody(self.rigidNode)
 
+        vehicleType = "yugo"
+        self.vehicleDir = "data/vehicles/" + vehicleType + "/"
+
         # Vehicle
         self.vehicle = BulletVehicle(world, self.rigidNode)
         self.vehicle.setCoordinateSystem(ZUp)
         world.attachVehicle(self.vehicle)
 
-        self.yugoNP = loader.loadModel("data/vehicles/yugo/yugo.egg")
-        self.yugoNP.reparentTo(self.np)
+        self.vehicleNP = loader.loadModel(self.vehicleDir + "car.egg")
+        self.vehicleNP.reparentTo(self.np)
 
         # Create wheels
         for fb, y in (("F", 1.05), ("B", -1.05)):
             for side, x in (("R", 0.7), ("L", -0.7)):
-                np = loader.loadModel("data/vehicles/yugo/yugotire%s.egg" % side)
+                np = loader.loadModel(self.vehicleDir + "tire%s.egg" % side)
                 np.reparentTo(render)
                 isFront = fb == "F"
                 self.addWheel(Point3(x, y, 0.3), isFront, np)
@@ -75,6 +80,29 @@ class Vehicle(object):
         wheel.setWheelsDampingCompression(4.4)
         wheel.setFrictionSlip(1000.0)
         wheel.setRollInfluence(0.05)
+
+    def initialiseSound(self, audioManager):
+        """Start the engine sound"""
+
+        self.engineSound = audioManager.loadSfx(self.vehicleDir + "engine.wav")
+        audioManager.attachSoundToObject(self.engineSound, self.np)
+        self.engineSound.setLoop(True)
+        self.engineSound.setPlayRate(0.7)
+        self.engineSound.play()
+
+    def updateSound(self, dt):
+        """Use vehicle speed to update sound pitch"""
+
+        # Use rear wheel rotation speed as some measure of engine revs
+
+        wheels = (self.vehicle.getWheel(idx) for idx in (2, 3))
+        wheelRate = 0.5 * sum(w.getDeltaRotation() / dt for w in wheels)
+        # In testing, wheelRate goes up to a bit over 100
+        # I guess this is in degrees per second, the
+        # Bullet documentation is rubbish
+        targetPlayRate = 0.7 + wheelRate / 150.0
+        currentRate = self.engineSound.getPlayRate()
+        self.engineSound.setPlayRate(0.9 * currentRate + 0.1 * targetPlayRate)
 
 
 class PlayerControl(DirectObject):
@@ -144,6 +172,7 @@ class PlayerControl(DirectObject):
         speed = math.sqrt(sum(v ** 2 for v in velocity))
         self.processInput(dt, speed=speed)
         self.updateCamera(speed=speed)
+        self.vehicle.updateSound(dt)
 
     def processInput(self, dt, speed=0.0):
         """Control the players car"""
@@ -279,6 +308,20 @@ class World(object):
 
         # Set up shaders for shadows and cartoon outline
         self.setupShaders()
+
+        # Create an audio manager. This is attached to the camera for
+        # player 1, so sounds close to other players might not be very
+        # loud
+        self.audioManager = Audio3DManager.Audio3DManager(
+                self.base.sfxManagerList[0], self.playerCameras[0])
+        # Distance should be in m, not feet
+        self.audioManager.setDistanceFactor(3.28084)
+
+        # Now initialise audio for all vehicles that were
+        # previously set up. We can't just create the audio manager
+        # first because we need the player 1 camera
+        for vehicle in self.playerVehicles:
+            vehicle.initialiseSound(self.audioManager)
 
     def run(self):
         """

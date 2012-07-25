@@ -13,6 +13,7 @@ from redgravel.menu import MainMenu
 config = """
 win-size 1024 768
 window-title Red Gravel
+audio-library-name p3openal_audio
 """
 
 
