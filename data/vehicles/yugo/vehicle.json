@@ -1,0 +1,20 @@
+{
+    "title": "Yugo",
+    "specs": {
+        "steeringLock": 45.0,
+        "maxWheelForce": 2000.0,
+        "brakeForce": 100.0,
+        "mass": 800.0,
+        "dimensions": [1.3, 2.8, 1.0],
+        "wheelPositions": [0.7, 1.05, 0.3],
+        "wheels": {
+            "radius": 0.25,
+            "suspensionTravel": 0.4,
+            "suspensionStiffness": 40.0,
+            "dampingRelaxation": 2.3,
+            "dampingCompression": 4.4,
+            "frictionSlip": 1000.0,
+            "rollInfluence": 0.05
+        }
+    }
+}

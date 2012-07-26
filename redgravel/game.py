@@ -2,6 +2,7 @@ import random
 import time
 import math
 from collections import defaultdict
+import json
 import sys
 
 from direct.showbase.DirectObject import DirectObject
@@ -30,41 +31,48 @@ class Vehicle(object):
         self.base = base
         loader = base.loader
 
-        # Chassis uses a simple box shape
-        # Note that these are half-extents:
-        shape = BulletBoxShape(Vec3(0.6, 1.4, 0.5))
+        vehicleType = "yugo"
+        self.vehicleDir = "data/vehicles/" + vehicleType + "/"
+        # Load vehicle description and specs
+        with open(self.vehicleDir + "vehicle.json") as vehicleData:
+            data = json.load(vehicleData)
+            self.specs = data["specs"]
+
+        # Chassis for collisions and mass uses a simple box shape
+        halfExtents = (0.5 * dim for dim in self.specs["dimensions"])
+        shape = BulletBoxShape(Vec3(*halfExtents))
         ts = TransformState.makePos(Point3(0, 0, 0.5))
 
         self.rigidNode = BulletRigidBodyNode("vehicle")
         self.rigidNode.addShape(shape, ts)
-        self.rigidNode.setMass(800.0)
+        self.rigidNode.setMass(self.specs["mass"])
         self.rigidNode.setDeactivationEnabled(False)
 
         self.np = render.attachNewNode(self.rigidNode)
         self.np.setPos(position)
         world.attachRigidBody(self.rigidNode)
 
-        vehicleType = "yugo"
-        self.vehicleDir = "data/vehicles/" + vehicleType + "/"
-
-        # Vehicle
+        # Vehicle physics model
         self.vehicle = BulletVehicle(world, self.rigidNode)
         self.vehicle.setCoordinateSystem(ZUp)
         world.attachVehicle(self.vehicle)
 
+        # Vehicle graphical model
         self.vehicleNP = loader.loadModel(self.vehicleDir + "car.egg")
         self.vehicleNP.reparentTo(self.np)
 
         # Create wheels
-        for fb, y in (("F", 1.05), ("B", -1.05)):
-            for side, x in (("R", 0.7), ("L", -0.7)):
+        wheelPos = self.specs["wheelPositions"]
+        for fb, y in (("F", wheelPos[1]), ("B", -wheelPos[1])):
+            for side, x in (("R", wheelPos[0]), ("L", -wheelPos[0])):
                 np = loader.loadModel(self.vehicleDir + "tire%s.egg" % side)
                 np.reparentTo(render)
                 isFront = fb == "F"
-                self.addWheel(Point3(x, y, 0.3), isFront, np)
+                self.addWheel(Point3(x, y, wheelPos[2]), isFront, np)
 
     def addWheel(self, position, isFront, np):
         wheel = self.vehicle.createWheel()
+        wheelSpecs = self.specs["wheels"]
 
         wheel.setNode(np.node())
         wheel.setChassisConnectionPointCs(position)
@@ -72,14 +80,13 @@ class Vehicle(object):
 
         wheel.setWheelDirectionCs(Vec3(0, 0, -1))
         wheel.setWheelAxleCs(Vec3(1, 0, 0))
-        wheel.setWheelRadius(0.25)
-        wheel.setMaxSuspensionTravelCm(40.0)
-
-        wheel.setSuspensionStiffness(40.0)
-        wheel.setWheelsDampingRelaxation(2.3)
-        wheel.setWheelsDampingCompression(4.4)
-        wheel.setFrictionSlip(1000.0)
-        wheel.setRollInfluence(0.05)
+        wheel.setWheelRadius(wheelSpecs["radius"])
+        wheel.setMaxSuspensionTravelCm(wheelSpecs["suspensionTravel"] * 100.0)
+        wheel.setSuspensionStiffness(wheelSpecs["suspensionStiffness"])
+        wheel.setWheelsDampingRelaxation(wheelSpecs["dampingRelaxation"])
+        wheel.setWheelsDampingCompression(wheelSpecs["dampingCompression"])
+        wheel.setFrictionSlip(wheelSpecs["frictionSlip"])
+        wheel.setRollInfluence(wheelSpecs["rollInfluence"])
 
     def initialiseSound(self, audioManager):
         """Start the engine sound"""
@@ -96,13 +103,40 @@ class Vehicle(object):
         # Use rear wheel rotation speed as some measure of engine revs
 
         wheels = (self.vehicle.getWheel(idx) for idx in (2, 3))
-        wheelRate = 0.5 * sum(w.getDeltaRotation() / dt for w in wheels)
+        wheelRate = 0.5 * abs(sum(w.getDeltaRotation() / dt for w in wheels))
         # In testing, wheelRate goes up to a bit over 100
         # I guess this is in degrees per second, the
         # Bullet documentation is rubbish
         targetPlayRate = 0.7 + wheelRate / 150.0
         currentRate = self.engineSound.getPlayRate()
         self.engineSound.setPlayRate(0.9 * currentRate + 0.1 * targetPlayRate)
+
+    def updateControl(self, controlState, dt):
+        """Updates acceleration, braking and steering
+
+        These are all passed in through a controlState dictionary
+        """
+
+        # Update acceleration and braking
+        wheelForce = controlState["throttle"] * self.specs["maxWheelForce"]
+        if controlState["reverse"]:
+            # Make reversing a bit slower than moving forward
+            wheelForce *= -0.5
+
+        brakeForce = controlState["brake"] * self.specs["brakeForce"]
+
+        # Update steering
+        # Steering control state is from -1 to 1
+        steering = controlState["steering"] * self.specs["steeringLock"]
+
+        # Apply steering to front wheels
+        self.vehicle.setSteeringValue(steering, 0);
+        self.vehicle.setSteeringValue(steering, 1);
+        # Apply engine and brake to rear wheels
+        self.vehicle.applyEngineForce(wheelForce, 2);
+        self.vehicle.applyEngineForce(wheelForce, 3);
+        self.vehicle.setBrake(brakeForce, 2);
+        self.vehicle.setBrake(brakeForce, 3);
 
 
 class PlayerControl(DirectObject):
@@ -114,7 +148,10 @@ class PlayerControl(DirectObject):
         self.vehicle = vehicle
         self.camera = camera
         self.inputState = defaultdict(bool)
-        
+        self.vehicleControlState = {}
+        self.vehicleControlState["reverse"] = False
+        self.vehicleControlState["steering"] = 0.0
+
         controls = {
                     "keyboard": {
                         "forward": "arrow_up",
@@ -156,16 +193,14 @@ class PlayerControl(DirectObject):
             self.accept(bind, self.inputState.update, [{action: True}])
             self.accept(bind + "-up", self.inputState.update, [{action: False}])
 
-        # Initialise steering
-        self.steering = 0.0  # in degrees
-        self.steeringLock = 45.0  # in degrees
-        self.steeringIncrement = 50.0  # in degrees/second
-        self.centeringRate = 50.0  # in degrees/second
-        self.reversing = False
-
         # Initialise camera
         self.updateCamera(initial=True)
         self.camera.node().getLens().setFov(60)
+
+        # Steering change per second, normalised to steering lock
+        # Eg. 45 degrees lock and 1.0 rate means 45 degrees per second
+        self.steeringRate = 0.8
+        self.centreingRate = 1.2
 
     def updatePlayer(self, dt):
         velocity = self.vehicle.rigidNode.getLinearVelocity()
@@ -175,50 +210,51 @@ class PlayerControl(DirectObject):
         self.vehicle.updateSound(dt)
 
     def processInput(self, dt, speed=0.0):
-        """Control the players car"""
+        """Use controls to update the player's car"""
 
-        engineForce = 0.0
-        brakeForce = 0.0
-
+        # For keyboard throttle and brake are either 0 or 1
         if self.inputState["forward"]:
-            engineForce = 2000.0
-        if self.inputState["brake"]:
-            if speed < 0.5 or self.reversing:
-                # If we're stopped, then start reversing
-                engineForce = -1000.0
-                self.reversing = True
-            else:
-                brakeForce = 100.0
+            self.vehicleControlState["throttle"] = 1.0
         else:
-            self.reversing = False
+            self.vehicleControlState["throttle"] = 0.0
 
+        # Update braking and reversing
+        if self.inputState["brake"]:
+            if speed < 0.5 or self.vehicleControlState["reverse"]:
+                # If we're stopped, then start reversing
+                # Also keep reversing if we already were
+                self.vehicleControlState["reverse"] = True
+                self.vehicleControlState["throttle"] = 1.0
+                self.vehicleControlState["brake"] = 0.0
+            else:
+                self.vehicleControlState["reverse"] = False
+                self.vehicleControlState["brake"] = 1.0
+        else:
+            self.vehicleControlState["reverse"] = False
+            self.vehicleControlState["brake"] = 0.0
+
+        # steering is normalised from -1 to 1, corresponding
+        # to the steering lock right and left
+        steering = self.vehicleControlState["steering"]
         if self.inputState["left"]:
-            self.steering += dt * self.steeringIncrement
-            self.steering = min(self.steering, self.steeringLock)
-        if self.inputState["right"]:
-            self.steering -= dt * self.steeringIncrement
-            self.steering = max(self.steering, -self.steeringLock)
-        elif not(self.inputState["left"]):
+            steering += dt * self.steeringRate
+            steering = min(steering, 1.0)
+        elif self.inputState["right"]:
+            steering -= dt * self.steeringRate
+            steering = max(steering, -1.0)
+        else:
             # gradually re-center the steering
-            if self.steering > 0.0:
-                self.steering -= dt * self.centeringRate
-                if self.steering < 0.0:
-                    self.steering = 0.0
-            elif self.steering < 0.0:
-                self.steering += dt * self.centeringRate
-                if self.steering > 0.0:
-                    self.steering = 0.0
+            if steering > 0.0:
+                steering -= dt * self.centreingRate
+                if steering < 0.0:
+                    steering = 0.0
+            elif steering < 0.0:
+                steering += dt * self.centreingRate
+                if steering > 0.0:
+                    steering = 0.0
+        self.vehicleControlState["steering"] = steering
 
-        vehicle = self.vehicle.vehicle
-        # Apply steering to front wheels
-        vehicle.setSteeringValue(self.steering, 0);
-        vehicle.setSteeringValue(self.steering, 1);
-
-        # Apply engine and brake to rear wheels
-        vehicle.applyEngineForce(engineForce, 2);
-        vehicle.applyEngineForce(engineForce, 3);
-        vehicle.setBrake(brakeForce, 2);
-        vehicle.setBrake(brakeForce, 3);
+        self.vehicle.updateControl(self.vehicleControlState, dt)
 
     def updateCamera(self, speed=0.0, initial=False):
         """Reposition camera depending on the vehicle speed"""
