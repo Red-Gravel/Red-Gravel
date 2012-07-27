@@ -337,6 +337,7 @@ class World(object):
         self.createGround()
 
         # create a pyramid of barrels
+        self.barrels = []
         width = 0.8
         height = 1.0
         numRows = 5
@@ -347,7 +348,7 @@ class World(object):
                         rowStart + column * width,
                         0,
                         row * height]
-                self.createBarrel(position, height)
+                self.barrels.append(self.createBarrel(position, height))
 
         #disable default cam so that we can have multiplayer
         base.camNode.setActive(False)
@@ -371,6 +372,8 @@ class World(object):
         # first because we need the player 1 camera
         for vehicle in self.playerVehicles:
             vehicle.initialiseSound(self.audioManager)
+
+        self.initialiseCollisionInfo()
 
     def run(self):
         """
@@ -572,6 +575,8 @@ class World(object):
         barrel.setHpr(0, 0, 0)
         barrel.reparentTo(np)
 
+        return np
+
     def createGround(self):
         """Create ground using a heightmap"""
 
@@ -692,9 +697,74 @@ class World(object):
 
         self.worldRender.setShaderAuto()
 
+    def initialiseCollisionInfo(self):
+        """
+        Sets up information required to later check for collisions
+        """
+
+        self.linearVelocities = defaultdict(Vec3)
+        self.collisionDetected = defaultdict(bool)
+
+        # List of node paths that we want to check for
+        # collisions on, with a threshold for velocity change and a
+        # callback function called when a collision is detected
+        self.collisionObjects = (
+            [(v.np, 130.0, self.vehicleCollision) for v in self.playerVehicles] +
+            [(b, 80.0, self.barrelCollision) for b in self.barrels])
+
+    def checkCollisions(self, dt):
+        """
+        Check to see what objects have collided and take actions
+        Eg. play sounds, update player points
+        """
+
+        # Using world.contactTest we can't get the force of a
+        # collision, so we also keep track of the linear velocities
+        # of objects and use the rate of change in velocity (ie. acceleration)
+        # to get the force of a collision
+
+        # Note that for a vehicle, turning very sharply can also result
+        # in a significant acceleration so we have to be careful we
+        # don't think that is a collision
+
+        for (nodePath, threshold, callback) in self.collisionObjects:
+            newVelocity = nodePath.node().getLinearVelocity()
+            diff = newVelocity - self.linearVelocities[nodePath]
+            self.linearVelocities[nodePath] = newVelocity
+            if self.collisionDetected[nodePath]:
+                # If a collision was recently detected, don't keep checking
+                # This avoids sounds repeatedly starting to play
+                continue
+            magnitude = math.sqrt(sum(v ** 2 for v in diff)) / dt
+            if magnitude > threshold:
+                callback(nodePath, magnitude)
+                # Set collision detected, and then set a time out so that it is
+                # later reset to False
+                self.collisionDetected[nodePath] = True
+                self.taskMgr.doMethodLater(
+                        0.2,
+                        self.collisionDetected.update,
+                        "clearColision",
+                        extraArgs=[{nodePath: False}])
+
+    def vehicleCollision(self, nodePath, magnitude):
+        collisionSound = self.audioManager.loadSfx("data/sounds/09.wav")
+        self.audioManager.attachSoundToObject(
+                collisionSound, nodePath)
+        collisionSound.setVolume(min(magnitude / 400.0, 1.0))
+        collisionSound.play()
+
+    def barrelCollision(self, nodePath, magnitude):
+        collisionSound = self.audioManager.loadSfx("data/sounds/05.wav")
+        self.audioManager.attachSoundToObject(
+                collisionSound, nodePath)
+        collisionSound.setVolume(min(magnitude / 200.0, 1.0))
+        collisionSound.play()
+
     def gameLoop(self, task):
         dt = self.globalClock.getDt()
         for i in self.playerControllers: #added to allow for changing player number
             i.updatePlayer(dt)
+        self.checkCollisions(dt)
         self.world.doPhysics(dt)
         return task.cont
