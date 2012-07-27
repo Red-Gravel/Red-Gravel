@@ -94,22 +94,34 @@ class Vehicle(object):
         self.engineSound = audioManager.loadSfx(self.vehicleDir + "engine.wav")
         audioManager.attachSoundToObject(self.engineSound, self.np)
         self.engineSound.setLoop(True)
-        self.engineSound.setPlayRate(0.7)
+        self.engineSound.setPlayRate(0.6)
         self.engineSound.play()
+
+        self.gearSpacing = (self.specs["sound"]["maxExpectedRotationRate"] /
+                self.specs["sound"]["numberOfGears"])
+        self.reversing = False
 
     def updateSound(self, dt):
         """Use vehicle speed to update sound pitch"""
 
+        soundSpecs = self.specs["sound"]
         # Use rear wheel rotation speed as some measure of engine revs
-
         wheels = (self.vehicle.getWheel(idx) for idx in (2, 3))
+        # wheelRate is in degrees per second
         wheelRate = 0.5 * abs(sum(w.getDeltaRotation() / dt for w in wheels))
-        # In testing, wheelRate goes up to a bit over 100
-        # I guess this is in degrees per second, the
-        # Bullet documentation is rubbish
-        targetPlayRate = 0.7 + wheelRate / 150.0
+
+        # Calculate which gear we're in, and what the normalised revs are
+        if self.reversing:
+            numberOfGears = 1
+        else:
+            numberOfGears = self.specs["sound"]["numberOfGears"]
+        gear = min(int(wheelRate / self.gearSpacing),
+                numberOfGears - 1)
+        posInGear = (wheelRate - gear * self.gearSpacing) / self.gearSpacing
+
+        targetPlayRate = 0.6 + posInGear * (1.5 - 0.6)
         currentRate = self.engineSound.getPlayRate()
-        self.engineSound.setPlayRate(0.9 * currentRate + 0.1 * targetPlayRate)
+        self.engineSound.setPlayRate(0.8 * currentRate + 0.2 * targetPlayRate)
 
     def updateControl(self, controlState, dt):
         """Updates acceleration, braking and steering
@@ -119,7 +131,8 @@ class Vehicle(object):
 
         # Update acceleration and braking
         wheelForce = controlState["throttle"] * self.specs["maxWheelForce"]
-        if controlState["reverse"]:
+        self.reversing = controlState["reverse"]
+        if self.reversing:
             # Make reversing a bit slower than moving forward
             wheelForce *= -0.5
 

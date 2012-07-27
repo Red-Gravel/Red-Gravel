@@ -15,6 +15,10 @@
             "dampingCompression": 4.4,
             "frictionSlip": 1000.0,
             "rollInfluence": 0.05
+        },
+        "sound": {
+            "maxExpectedRotationRate": 150.0,
+            "numberOfGears": 4
         }
     }
 }
