@@ -9,7 +9,7 @@ from direct.showbase.DirectObject import DirectObject
 from direct.showbase import Audio3DManager
 from direct.filter.CommonFilters import CommonFilters
 from panda3d.core import Vec3, Vec4, Point3
-from panda3d.core import AmbientLight, Spotlight
+from panda3d.core import AmbientLight, DirectionalLight
 from panda3d.core import Texture, TextureStage
 from panda3d.core import TransformState
 from panda3d.core import GeoMipTerrain
@@ -665,17 +665,16 @@ class World(object):
         alightNP = self.worldRender.attachNewNode(alight)
         self.worldRender.setLight(alightNP)
 
-        # Create a spotlight for shadows
-        # Could also use a directional light with the automatic shadows
-        spotlight = Spotlight('light')
-        spotlight.setColor(Vec4(0.8, 0.8, 0.8, 1))
-        spotlight.setShadowCaster(True, 2048, 2048)
-        spotlight.getLens().setFov(40)
-        spotlight.getLens().setNearFar(2, 50)
-        spotlightNP = self.worldRender.attachNewNode(spotlight)
-        spotlightNP.setPos(-20, -20, 35)
-        spotlightNP.lookAt(0, 0, 0)
-        self.worldRender.setLight(spotlightNP)
+        # Create a directional light for shadows
+        dlight = DirectionalLight('dLight')
+        dlight.setColor(Vec4(0.6, 0.6, 0.6, 1))
+        dlight.setShadowCaster(True, 1024, 1024)
+        dlight.getLens().setNearFar(1, 15)
+        dlight.getLens().setFilmSize(128, 128)
+        dlightNP = self.worldRender.attachNewNode(dlight)
+        dlightNP.setPos(0, 0, 10)
+        dlightNP.lookAt(0, 0, 0)
+        self.worldRender.setLight(dlightNP)
 
     def setupShaders(self):
         """
