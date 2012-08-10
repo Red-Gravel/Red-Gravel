@@ -1,0 +1,10 @@
+{
+  "title": "Stadium",
+  "model": "models/arena01.egg",
+  "terrain": {
+    "elevation": "textures/elevation.png",
+    "texture": "textures/dirt.png",
+    "heightRange": 10.0
+  },
+  "sky": "textures/skymap.png"
+}

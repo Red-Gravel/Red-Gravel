@@ -1,0 +1,17 @@
+Any files not mentioned here were created for Red Gravel and are licensed
+under the CC-0 license.
+
+dirt.png
+========
+
+Retrieved from http://opengameart.org/content/dirt-004
+Author: Lamoot
+License: CC-By 3.0 with allowance to use future versions of the same licese.
+
+concrete.png
+============
+
+Modified from the original:
+Retrieved from http://opengameart.org/content/quake-style-painted-concrete-wall-blue-and-red
+Author: Sindwiller
+License: CC-By-SA 3.0 with allowance to use future versions of the same licese.

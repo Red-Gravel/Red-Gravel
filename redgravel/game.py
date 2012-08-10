@@ -1,7 +1,7 @@
 import random
 import time
 import math
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import json
 import sys
 
@@ -23,13 +23,15 @@ from panda3d.bullet import (
         BulletBoxShape, BulletHeightfieldShape)
 from panda3d.bullet import BulletRigidBodyNode, BulletDebugNode
 from panda3d.bullet import BulletVehicle
+from panda3d.bullet import BulletTriangleMeshShape, BulletTriangleMesh
 from panda3d.bullet import XUp, YUp, ZUp
 
 
 class Vehicle(object):
-    def __init__(self, position, render, world, base):
+    def __init__(self, positionHpr, render, world, base):
         self.base = base
         loader = base.loader
+        position, hpr = positionHpr
 
         vehicleType = "yugo"
         self.vehicleDir = "data/vehicles/" + vehicleType + "/"
@@ -50,6 +52,7 @@ class Vehicle(object):
 
         self.np = render.attachNewNode(self.rigidNode)
         self.np.setPos(position)
+        self.np.setHpr(hpr)
         world.attachRigidBody(self.rigidNode)
 
         # Vehicle physics model
@@ -89,7 +92,14 @@ class Vehicle(object):
         wheel.setRollInfluence(wheelSpecs["rollInfluence"])
 
     def initialiseSound(self, audioManager):
-        """Start the engine sound"""
+        """Start the engine sound and set collision sounds"""
+
+        # Set sounds to play for collisions
+        self.collisionSound = CollisionSound(
+            nodePath=self.np,
+            sounds=["data/sounds/09.wav"],
+            thresholdAccel=130.0,
+            maxAccel=400.0)
 
         self.engineSound = audioManager.loadSfx(self.vehicleDir + "engine.wav")
         audioManager.attachSoundToObject(self.engineSound, self.np)
@@ -334,21 +344,8 @@ class World(object):
 
         self.initialisePhysics(debug=False)
 
-        self.createGround()
-
-        # create a pyramid of barrels
-        self.barrels = []
-        width = 0.8
-        height = 1.0
-        numRows = 5
-        for row in range(numRows):
-            for column in range(numRows - row):
-                rowStart = 0.5 * width * (row - numRows + 1)
-                position = [
-                        rowStart + column * width,
-                        0,
-                        row * height]
-                self.barrels.append(self.createBarrel(position, height))
+        # Load the default arena
+        self.level = Level("01.json", self)
 
         #disable default cam so that we can have multiplayer
         base.camNode.setActive(False)
@@ -395,19 +392,22 @@ class World(object):
         self.playerInputKeys = range(numberOfPlayers)
         #default camera position bound to each car
         cameraPosition = (0,-8,3)
-        #default vehicle position
-        vehiclePosition = (0.0, -15.0, 0.5)
-        
+        vehiclePositions = self.level.spawnPositions
+        if numberOfPlayers > len(vehiclePositions):
+            raise ValueError("Number of players (%d) requested is greater "
+                    "than the number of spawn positions (%d)" %
+                    (numberOfPlayers, len(vehiclePositions)))
+
         #single player display setup - default
         displayXStart = 0.0
         displayXEnd = 1.0
         displayYStart = 0.0
         displayYEnd = 1.0
-        
-        
+
         #I am not proud of myself for this... There has to be a better way using maths
         # But it's nearly 2am and I'll figure it out tomorrow
         for i in xrange(numberOfPlayers):            
+            vehiclePosition = vehiclePositions[i]
             if numberOfPlayers == 2:
                 if i == 0:#player 1, indexes from 0
                     displayXStart = 0.0#don't need this but it's safer to have it'
@@ -419,7 +419,6 @@ class World(object):
                     displayXEnd = 1.0
                     displayYStart = 0.0
                     displayYEnd = 0.5
-                    vehiclePosition = (0.0, -25.0, 0.5)
             elif numberOfPlayers == 3:
                 if i == 0: #top of screen
                     displayXStart = 0.0#don't need this but it's safer to have it'
@@ -431,13 +430,11 @@ class World(object):
                     displayXEnd = 0.5
                     displayYStart = 0.0
                     displayYEnd = 0.5
-                    vehiclePosition = (0.0, -25.0, 0.5)
                 else: #bottom right
                     displayXStart = 0.5
                     displayXEnd = 1.0
                     displayYStart = 0.0
                     displayYEnd = 0.5
-                    vehiclePosition = (0.0, 15.0, 0.5)
             elif numberOfPlayers == 4:
                 if i == 0: #p1, top left
                     displayXStart = 0.0#don't need this but it's safer to have it'
@@ -449,19 +446,16 @@ class World(object):
                     displayXEnd = 1.0
                     displayYStart = 0.5
                     displayYEnd = 1.0
-                    vehiclePosition = (0.0, -25.0, 0.5)
                 elif i == 2: #p3, bottom left
                     displayXStart = 0.0
                     displayXEnd = 0.5
                     displayYStart = 0.0
                     displayYEnd = 0.5
-                    vehiclePosition = (0.0, 15.0, 0.5)
                 else: #else p4, bottom right
                     displayXStart = 0.5
                     displayXEnd = 1.0
                     displayYStart = 0.0
                     displayYEnd = 0.5
-                    vehiclePosition = (0.0, 25.0, 0.5)
                 
             #setup display area for this player's camera
             displayBox = (displayXStart, displayXEnd, displayYStart, displayYEnd)
@@ -531,108 +525,6 @@ class World(object):
             self.debugNP.node().showNormals(True)
             self.world.setDebugNode(self.debugNP.node())
 
-    def createBarrel(self, position, height=1.0):
-        """
-        Create a barrel with the centre of the base at the given position
-        """
-
-        # Get barrel textures
-        colour = random.choice(("black", "blue", "green", "red", "yellow"))
-        texture = self.loader.loadTexture("data/models/barrel/diffus_" + colour + ".tga")
-        normalMap = self.loader.loadTexture("data/models/barrel/normal_hard_bumps.tga")
-        specularMap = self.loader.loadTexture("data/models/barrel/specular_rust.tga")
-        nmTs = TextureStage('normal')
-        nmTs.setMode(TextureStage.MNormal)
-        sTs = TextureStage('specular')
-        sTs.setMode(TextureStage.MGloss)
-
-        # Create graphical model for barrel
-        barrel = self.loader.loadModel("data/models/barrel/metal_barrel.egg")
-        barrel.setTexture(texture)
-        barrel.setTexture(nmTs, normalMap)
-        barrel.setTexture(sTs, specularMap)
-        barrelMin, barrelMax = barrel.getTightBounds()
-
-        # Y is the cylinder axis here
-        scale = height  / (barrelMax[2] - barrelMin[2])
-        radius = (barrelMax[0] - barrelMin[0]) * scale * 0.5
-
-        # Create a barrel for physics
-        barrelShape = BulletCylinderShape(radius, height, ZUp)
-        barrelNode = BulletRigidBodyNode('barrel')
-        barrelNode.setMass(8.0)
-        barrelNode.setFriction(100.0)
-        barrelNode.addShape(barrelShape)
-
-        np = self.worldRender.attachNewNode(barrelNode)
-        position[2] = position[2] + 0.5 * height
-        np.setPos(*position)
-        np.setHpr(0, 0, 0)
-        self.world.attachRigidBody(barrelNode)
-
-        barrel.setScale(scale, scale, scale)
-        barrel.setPos(0.0, 0.0, -0.5)
-        barrel.setHpr(0, 0, 0)
-        barrel.reparentTo(np)
-
-        return np
-
-    def createGround(self):
-        """Create ground using a heightmap"""
-
-        # Create heightfield for physics
-        maxHeight = 10.0
-
-        # Image needs to have dimensions that are a power of 2 + 1
-        heightMap = PNMImage('data/models/floor/elevation.png')
-        xdim = heightMap.getXSize()
-        ydim = heightMap.getYSize()
-        shape = BulletHeightfieldShape(heightMap, maxHeight, ZUp)
-        shape.setUseDiamondSubdivision(True)
-
-        np = self.outsideWorldRender.attachNewNode(
-            BulletRigidBodyNode('terrain'))
-        np.node().addShape(shape)
-        np.setPos(0, 0, 0)
-        self.world.attachRigidBody(np.node())
-
-        # Create graphical terrain from same height map
-        self.terrain = GeoMipTerrain('terrain')
-        self.terrain.setHeightfield(heightMap)
-
-        self.terrain.setBlockSize(32)
-        self.terrain.setBruteforce(True)
-        rootNP = self.terrain.getRoot()
-        rootNP.reparentTo(self.worldRender)
-        rootNP.setSz(maxHeight)
-
-        offset = xdim / 2.0 - 0.5
-        rootNP.setPos(-offset, -offset, -maxHeight / 2.0)
-        self.terrain.generate()
-
-        # Apply texture
-        diffuse = self.loader.loadTexture(Filename("data/models/floor/dirt.png"))
-        diffuse.setWrapU(Texture.WMRepeat)
-        diffuse.setWrapV(Texture.WMRepeat)
-        rootNP.setTexture(diffuse)
-        textureSize = 6.0
-        ts = TextureStage.getDefault()
-        rootNP.setTexScale(ts, xdim / textureSize, ydim / textureSize)
-
-        # Create planes around area to prevent player flying off the edge
-        sides = (
-                (Vec3(1, 0, 0), -xdim / 2.0),
-                (Vec3(-1, 0, 0), -xdim / 2.0),
-                (Vec3(0, 1, 0), -ydim / 2.0),
-                (Vec3(0, -1, 0), -ydim / 2.0),
-                )
-        for sideNum, side in enumerate(sides):
-            normal, offset = side
-            sideShape = BulletPlaneShape(normal, offset)
-            sideNode = BulletRigidBodyNode('side%d' % sideNum)
-            sideNode.addShape(sideShape)
-            self.world.attachRigidBody(sideNode)
-
     def createSkybox(self, currentCamera, bitmaskCode):
         """
         Create a skybox linked to the current camera setup. 
@@ -641,7 +533,7 @@ class World(object):
         """
 
         sky = self.loader.loadModel("data/models/sky/cube.egg")
-        diffuse = self.loader.loadTexture("data/models/sky/skymap.png")
+        diffuse = self.loader.loadTexture(self.level.skyTexture)
         sky.setTexture(diffuse)
         sky.setScale(270)
         # Get it to follow the camera so it feels as if it's infinitely
@@ -653,7 +545,6 @@ class World(object):
         #show only to this player's camera
         currentCamera.node().setCameraMask(BitMask32.bit(bitmaskCode))
         sky.show(BitMask32.bit(bitmaskCode))
-        
 
     def createLights(self):
         """Create an ambient light and a spotlight for shadows"""
@@ -708,8 +599,8 @@ class World(object):
         # collisions on, with a threshold for velocity change and a
         # callback function called when a collision is detected
         self.collisionObjects = (
-            [(v.np, 130.0, self.vehicleCollision) for v in self.playerVehicles] +
-            [(b, 80.0, self.barrelCollision) for b in self.barrels])
+            [(v.np, v.collisionSound) for v in self.playerVehicles] +
+            [(o, s) for o, s in self.level.collisionObjects.iteritems()])
 
     def checkCollisions(self, dt):
         """
@@ -726,7 +617,7 @@ class World(object):
         # in a significant acceleration so we have to be careful we
         # don't think that is a collision
 
-        for (nodePath, threshold, callback) in self.collisionObjects:
+        for (nodePath, soundInfo) in self.collisionObjects:
             newVelocity = nodePath.node().getLinearVelocity()
             diff = newVelocity - self.linearVelocities[nodePath]
             self.linearVelocities[nodePath] = newVelocity
@@ -735,8 +626,8 @@ class World(object):
                 # This avoids sounds repeatedly starting to play
                 continue
             magnitude = math.sqrt(sum(v ** 2 for v in diff)) / dt
-            if magnitude > threshold:
-                callback(nodePath, magnitude)
+            if magnitude > soundInfo.thresholdAccel:
+                self.playCollisionSound(soundInfo, magnitude)
                 # Set collision detected, and then set a time out so that it is
                 # later reset to False
                 self.collisionDetected[nodePath] = True
@@ -746,18 +637,24 @@ class World(object):
                         "clearColision",
                         extraArgs=[{nodePath: False}])
 
-    def vehicleCollision(self, nodePath, magnitude):
-        collisionSound = self.audioManager.loadSfx("data/sounds/09.wav")
-        self.audioManager.attachSoundToObject(
-                collisionSound, nodePath)
-        collisionSound.setVolume(min(magnitude / 400.0, 1.0))
-        collisionSound.play()
+    def playCollisionSound(self, soundInfo, magnitude):
+        """Play a sound when an object is impacted
 
-    def barrelCollision(self, nodePath, magnitude):
-        collisionSound = self.audioManager.loadSfx("data/sounds/05.wav")
+        Selects from a list of sounds depending on the collision
+        magnitude, and scales the sound volume by the magnitude
+        """
+
+        relativeMagnitude = ((magnitude - soundInfo.thresholdAccel) /
+            (soundInfo.maxAccel - soundInfo.thresholdAccel))
+        soundIndex = min(
+            int(relativeMagnitude * len(soundInfo.sounds)),
+            len(soundInfo.sounds) - 1)
+        collisionSound = self.audioManager.loadSfx(
+            soundInfo.sounds[soundIndex])
         self.audioManager.attachSoundToObject(
-                collisionSound, nodePath)
-        collisionSound.setVolume(min(magnitude / 200.0, 1.0))
+            collisionSound, soundInfo.nodePath)
+        collisionSound.setVolume(
+            min(0.2 + magnitude / soundInfo.maxAccel, 1.0))
         collisionSound.play()
 
     def gameLoop(self, task):
@@ -767,3 +664,205 @@ class World(object):
         self.checkCollisions(dt)
         self.world.doPhysics(dt)
         return task.cont
+
+
+class Level(object):
+    """
+    Describes level/arena geometry and physics, as well as positions
+    of spawn points and any special items
+    """
+
+    basePath = "data/arenas/"
+
+    def __init__(self, name, world):
+        self.base = world.base
+        self.physicsWorld = world.world
+        self.worldRender = world.worldRender
+        self.outsideWorldRender = world.outsideWorldRender
+
+        self.loader = self.base.loader
+        self.spawnPositions = []
+        self.collisionObjects = {}
+
+        with open(self.basePath + name) as levelData:
+            data = json.load(levelData)
+
+        self.skyTexture = self.basePath + data["sky"]
+        self.createGround(data["terrain"])
+
+        levelModel = self.loader.loadModel(self.basePath + data["model"])
+        self.spawnPositions = []
+        allModels = levelModel.findAllMatches("**")
+        for model in allModels:
+            if model.hasTag("marker"):
+                markerType = model.getTag("marker")
+                self.addMarker(markerType, model.getPos(), model.getHpr())
+                model.removeNode()
+            elif model.hasTag("physicsObject"):
+                objectType = model.getTag("physicsObject")
+                self.addPhysicsObject(model, objectType)
+                model.removeNode()
+            elif model.hasTag("linkedPhysicsObject"):
+                objectDescription = model.getTag("linkedPhysicsObject")
+                rigidBodyNode = self.addLinkedPhysicsObject(
+                        model, objectDescription)
+                # Graphical model is not removed
+            else:
+                pass
+        levelModel.reparentTo(self.worldRender)
+
+    def addMarker(self, markerType, position, hpr):
+        """Add a marker object to the level"""
+
+        if markerType == "spawnPosition":
+            self.spawnPositions.append((position, hpr))
+        else:
+            raise ValueError("Invalid marker type: %s" % markerType)
+
+    def addPhysicsObject(self, model, objectType):
+        """Adds a physical object to the level
+
+        The object isn't linked with a graphical object
+        """
+
+        if objectType == "barrier":
+            # Use a triangle mesh to represent the barrier as
+            # it could be concave
+            mesh = BulletTriangleMesh()
+            mesh.addGeom(model.node().getGeom(0))
+            shape = BulletTriangleMeshShape(mesh, dynamic=False)
+            rigidNode = BulletRigidBodyNode("barrier")
+            rigidNode.addShape(shape)
+            self.physicsWorld.attachRigidBody(rigidNode)
+            # Set the position from the model
+            pNode = self.outsideWorldRender.attachNewNode(rigidNode)
+            pNode.setPos(model.getPos())
+        else:
+            raise ValueError("Invalid physics object type: %s" % objectType)
+
+    def addLinkedPhysicsObject(self, model, objectDescription):
+        """Associate a phyiscal body with a model in this level
+        """
+
+        splitDescription = objectDescription.split()
+        try:
+            objectType = splitDescription[0]
+            parameters = splitDescription[1:]
+        except IndexError:
+            raise ValueError("Empty physics object description")
+
+        if objectType == "cylinder":
+            try:
+                radius, height = map(float, parameters)
+            except ValueError:
+                raise ValueError("Invalid cylinder parameters: %s" %
+                        " ".join(parameters))
+            shape = BulletCylinderShape(radius, height, ZUp)
+        else:
+            raise ValueError("Invalid physics object type: %s" % objectType)
+
+        # Create rigid body node and add to render and physics world
+        rigidBodyNode = BulletRigidBodyNode(model.getName() + "_shape")
+        rigidBodyNode.addShape(shape)
+        rigidBodyNodePath = self.worldRender.attachNewNode(rigidBodyNode)
+
+        # If mass is assigned, then this is a dynamic rigid body,
+        # otherwise it's static
+        if model.hasTag("mass"):
+            mass = float(model.getTag("mass"))
+            rigidBodyNode.setMass(mass)
+
+        # Set it's position and orientation to match the model
+        rigidBodyNodePath.setPos(model.getPos())
+        rigidBodyNodePath.setHpr(model.getHpr())
+        self.physicsWorld.attachRigidBody(rigidBodyNode)
+
+        # Reparent graphical model so it follows physical object
+        model.reparentTo(rigidBodyNodePath)
+        model.setPos(0, 0, 0)
+        model.setHpr(0, 0, 0)
+
+        # Define sounds to play when this object is hit
+        if model.hasTag("collisionSounds"):
+            soundDescription = model.getTag("collisionSounds")
+            self.addCollisionSounds(rigidBodyNodePath, soundDescription)
+
+    def addCollisionSounds(self, nodePath, description):
+        """Assign sounds to play when this object collides with something
+        """
+
+        splitDescription = description.split()
+        try:
+            thresholdAccel, maxAccel = map(float, splitDescription[0:2])
+        except ValueError:
+            raise ValueError(
+                "Invalid collision sound description: %s" % description)
+        sounds = splitDescription[2:]
+        if len(sounds) == 0:
+            raise ValueError("No collision sounds defined: %s" % nodePath)
+
+        soundInfo = CollisionSound(nodePath, sounds, thresholdAccel, maxAccel)
+        self.collisionObjects[nodePath] = soundInfo
+
+    def createGround(self, terrainData):
+        """Create ground using a heightmap"""
+
+        # Create heightfield for physics
+        heightRange = terrainData["heightRange"]
+
+        # Image needs to have dimensions that are a power of 2 + 1
+        heightMap = PNMImage(self.basePath + terrainData["elevation"])
+        xdim = heightMap.getXSize()
+        ydim = heightMap.getYSize()
+        shape = BulletHeightfieldShape(heightMap, heightRange, ZUp)
+        shape.setUseDiamondSubdivision(True)
+
+        np = self.outsideWorldRender.attachNewNode(
+            BulletRigidBodyNode('terrain'))
+        np.node().addShape(shape)
+        np.setPos(0, 0, 0)
+        self.physicsWorld.attachRigidBody(np.node())
+
+        # Create graphical terrain from same height map
+        terrain = GeoMipTerrain('terrain')
+        terrain.setHeightfield(heightMap)
+
+        terrain.setBlockSize(32)
+        terrain.setBruteforce(True)
+        rootNP = terrain.getRoot()
+        rootNP.reparentTo(self.worldRender)
+        rootNP.setSz(heightRange)
+
+        offset = xdim / 2.0 - 0.5
+        rootNP.setPos(-offset, -offset, -heightRange / 2.0)
+        terrain.generate()
+
+        # Apply texture
+        diffuse = self.loader.loadTexture(Filename(
+            self.basePath + terrainData["texture"]))
+        diffuse.setWrapU(Texture.WMRepeat)
+        diffuse.setWrapV(Texture.WMRepeat)
+        rootNP.setTexture(diffuse)
+        textureSize = 6.0
+        ts = TextureStage.getDefault()
+        rootNP.setTexScale(ts, xdim / textureSize, ydim / textureSize)
+
+        # Create planes around area to prevent player flying off the edge
+        # Levels can define barriers around them but it's probably a good
+        # idea to leave this here just in case
+        sides = (
+                (Vec3(1, 0, 0), -xdim / 2.0),
+                (Vec3(-1, 0, 0), -xdim / 2.0),
+                (Vec3(0, 1, 0), -ydim / 2.0),
+                (Vec3(0, -1, 0), -ydim / 2.0),
+                )
+        for sideNum, side in enumerate(sides):
+            normal, offset = side
+            sideShape = BulletPlaneShape(normal, offset)
+            sideNode = BulletRigidBodyNode('side%d' % sideNum)
+            sideNode.addShape(sideShape)
+            self.physicsWorld.attachRigidBody(sideNode)
+
+
+CollisionSound = namedtuple('CollisionSound', (
+    'nodePath', 'sounds', 'thresholdAccel', 'maxAccel'))
