@@ -98,8 +98,8 @@ class Vehicle(object):
         self.collisionSound = CollisionSound(
             nodePath=self.np,
             sounds=["data/sounds/09.wav"],
-            thresholdAccel=130.0,
-            maxAccel=400.0)
+            thresholdForce=600.0,
+            maxForce=800000.0)
 
         self.engineSound = audioManager.loadSfx(self.vehicleDir + "engine.wav")
         audioManager.attachSoundToObject(self.engineSound, self.np)
@@ -592,15 +592,14 @@ class World(object):
         Sets up information required to later check for collisions
         """
 
-        self.linearVelocities = defaultdict(Vec3)
+        self.previousContactForce = defaultdict(float)
         self.collisionDetected = defaultdict(bool)
 
-        # List of node paths that we want to check for
-        # collisions on, with a threshold for velocity change and a
-        # callback function called when a collision is detected
-        self.collisionObjects = (
-            [(v.np, v.collisionSound) for v in self.playerVehicles] +
-            [(o, s) for o, s in self.level.collisionObjects.iteritems()])
+        # List of node paths that we want to check for collisions on,
+        # with information about the collision sounds to play
+        self.collisionObjects = dict(
+            (v.rigidNode, v.collisionSound) for v in self.playerVehicles)
+        self.collisionObjects.update(self.level.collisionObjects)
 
     def checkCollisions(self, dt):
         """
@@ -608,34 +607,47 @@ class World(object):
         Eg. play sounds, update player points
         """
 
-        # Using world.contactTest we can't get the force of a
-        # collision, so we also keep track of the linear velocities
-        # of objects and use the rate of change in velocity (ie. acceleration)
-        # to get the force of a collision
+        # Use the change in the sum of contact force magnitudes to
+        # check for collisions.
 
-        # Note that for a vehicle, turning very sharply can also result
-        # in a significant acceleration so we have to be careful we
-        # don't think that is a collision
+        # Go though contact points, calculating the total contact
+        # force on all nodes of interest
+        totalContactForce = defaultdict(float)
+        for manifold in self.world.getManifolds():
+            nodes = (manifold.getNode0(), manifold.getNode1())
+            # Sum all points to get total impulse. Not sure if this is a
+            # good idea or we should use individual points, and if we
+            # need to use force direction rather than just magnitude
+            points = manifold.getManifoldPoints()
+            totalImpulse = sum((p.getAppliedImpulse() for p in points))
+            # Use force to get a more frame-rate independent measure of
+            # collision magnitude
+            force = totalImpulse / dt
+            for node in nodes:
+                if node in self.collisionObjects:
+                    totalContactForce[node] += force
 
-        for (nodePath, soundInfo) in self.collisionObjects:
-            newVelocity = nodePath.node().getLinearVelocity()
-            diff = newVelocity - self.linearVelocities[nodePath]
-            self.linearVelocities[nodePath] = newVelocity
-            if self.collisionDetected[nodePath]:
+        for node, force in totalContactForce.iteritems():
+            forceChange = force - self.previousContactForce[node]
+            if self.collisionDetected[node]:
                 # If a collision was recently detected, don't keep checking
                 # This avoids sounds repeatedly starting to play
                 continue
-            magnitude = math.sqrt(sum(v ** 2 for v in diff)) / dt
-            if magnitude > soundInfo.thresholdAccel:
-                self.playCollisionSound(soundInfo, magnitude)
-                # Set collision detected, and then set a time out so that it is
-                # later reset to False
-                self.collisionDetected[nodePath] = True
+            soundInfo = self.collisionObjects[node]
+            if forceChange > soundInfo.thresholdForce:
+                self.playCollisionSound(soundInfo, forceChange)
+                # Set collision detected, and then set a time out
+                # so that it is later reset to False
+                self.collisionDetected[node] = True
                 self.taskMgr.doMethodLater(
-                        0.2,
-                        self.collisionDetected.update,
-                        "clearColision",
-                        extraArgs=[{nodePath: False}])
+                    0.2,
+                    self.collisionDetected.update,
+                    "clearColision",
+                    extraArgs=[{node: False}])
+
+        # Want to reset anything not touching to zero, so replace
+        # previous contact forces with current ones rather than updating
+        self.previousContactForce = totalContactForce
 
     def playCollisionSound(self, soundInfo, magnitude):
         """Play a sound when an object is impacted
@@ -644,8 +656,8 @@ class World(object):
         magnitude, and scales the sound volume by the magnitude
         """
 
-        relativeMagnitude = ((magnitude - soundInfo.thresholdAccel) /
-            (soundInfo.maxAccel - soundInfo.thresholdAccel))
+        relativeMagnitude = ((magnitude - soundInfo.thresholdForce) /
+            (soundInfo.maxForce - soundInfo.thresholdForce))
         soundIndex = min(
             int(relativeMagnitude * len(soundInfo.sounds)),
             len(soundInfo.sounds) - 1)
@@ -654,7 +666,7 @@ class World(object):
         self.audioManager.attachSoundToObject(
             collisionSound, soundInfo.nodePath)
         collisionSound.setVolume(
-            min(0.2 + magnitude / soundInfo.maxAccel, 1.0))
+            min(0.2 + magnitude / soundInfo.maxForce, 1.0))
         collisionSound.play()
 
     def gameLoop(self, task):
@@ -663,6 +675,7 @@ class World(object):
             i.updatePlayer(dt)
         self.checkCollisions(dt)
         self.world.doPhysics(dt)
+
         return task.cont
 
 
@@ -793,7 +806,7 @@ class Level(object):
 
         splitDescription = description.split()
         try:
-            thresholdAccel, maxAccel = map(float, splitDescription[0:2])
+            thresholdForce, maxForce = map(float, splitDescription[0:2])
         except ValueError:
             raise ValueError(
                 "Invalid collision sound description: %s" % description)
@@ -801,8 +814,8 @@ class Level(object):
         if len(sounds) == 0:
             raise ValueError("No collision sounds defined: %s" % nodePath)
 
-        soundInfo = CollisionSound(nodePath, sounds, thresholdAccel, maxAccel)
-        self.collisionObjects[nodePath] = soundInfo
+        soundInfo = CollisionSound(nodePath, sounds, thresholdForce, maxForce)
+        self.collisionObjects[nodePath.node()] = soundInfo
 
     def createGround(self, terrainData):
         """Create ground using a heightmap"""
@@ -865,4 +878,4 @@ class Level(object):
 
 
 CollisionSound = namedtuple('CollisionSound', (
-    'nodePath', 'sounds', 'thresholdAccel', 'maxAccel'))
+    'nodePath', 'sounds', 'thresholdForce', 'maxForce'))

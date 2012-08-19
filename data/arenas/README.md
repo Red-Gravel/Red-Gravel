@@ -84,7 +84,7 @@ turns it into a rigid body.
 
 Format:
 
-    thresholdAcceleration maximumAcceleration sound1 sound2...
+    thresholdForce maximumForce sound1 sound2...
 
 Eg:
 
@@ -92,6 +92,6 @@ Eg:
 
 A list of sounds to choose from when this object is impacted,
 in ascending order of collision magnitude. This only works on
-rigid bodies. The threshold acceleration is the minimum acceleration
-before a sound is played and maximum acceleration is the acceleration
+rigid bodies. The threshold force is the minimum contact force change
+before a sound is played and maximum force is the contact force change
 for maximum volume.

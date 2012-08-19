@@ -38,7 +38,7 @@
   <Scalar> magfilter { linear_mipmap_linear }
   <Scalar> envtype { modulate }
 }
-<Texture> Texture.005 {
+<Texture> Texture.001 {
   "../textures/concrete.png"
   <Scalar> wrap { repeat }
   <Scalar> minfilter { linear_mipmap_linear }
@@ -115,7 +115,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
@@ -4544,7 +4544,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
@@ -8973,7 +8973,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
@@ -13402,7 +13402,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
@@ -17831,7 +17831,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
@@ -22260,7 +22260,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
@@ -26689,7 +26689,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
@@ -31118,7 +31118,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
@@ -35547,7 +35547,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
@@ -45294,769 +45294,769 @@
   }
   <Polygon> {
     <Normal> { 0.098 0.995 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 267 271 302 298 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.29 0.957 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 299 303 334 330 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.471 0.882 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 331 335 366 362 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.634 0.773 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 363 367 414 410 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.773 0.634 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 411 415 454 450 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.882 0.471 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 451 455 486 482 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.957 0.29 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 483 487 494 490 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.995 0.098 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 491 495 511 507 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.995 -0.098 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 506 510 503 499 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.957 -0.29 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 498 502 479 475 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.882 -0.471 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 474 478 463 459 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.773 -0.634 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 458 462 407 403 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.634 -0.773 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 402 406 359 355 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.471 -0.882 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 354 358 327 323 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.29 -0.957 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 322 326 295 291 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.098 -0.995 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 290 294 247 243 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.098 -0.995 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 240 244 213 209 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.29 -0.957 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 208 212 181 177 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.471 -0.882 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 176 180 149 145 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.634 -0.773 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 144 148 101 97 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.773 -0.634 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 96 100 53 49 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.882 -0.471 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 48 52 29 25 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.957 -0.29 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 24 28 13 9 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.995 -0.098 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 8 12 4 0 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.995 0.098 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 1 5 20 16 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.957 0.29 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 17 21 36 32 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.882 0.471 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 33 37 60 56 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.773 0.634 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 57 61 108 104 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.634 0.773 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 105 109 156 152 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.471 0.882 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 153 157 188 184 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.098 0.995 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 217 221 268 264 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.29 0.957 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 185 189 220 216 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.098 -0.995 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 281 285 260 256 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.29 -0.957 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 313 317 284 280 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.471 -0.882 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 345 349 316 312 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.634 -0.773 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 377 381 348 344 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.773 -0.634 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 385 389 380 376 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.882 -0.471 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 425 429 388 384 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.957 -0.29 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 441 445 428 424 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.995 -0.098 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 464 468 444 440 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.995 0.098 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 432 436 469 465 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.957 0.29 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 416 420 437 433 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.882 0.471 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 392 396 421 417 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.773 0.634 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 368 372 397 393 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.634 0.773 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 336 340 373 369 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.471 0.882 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 304 308 341 337 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.29 0.957 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 272 276 309 305 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.098 0.995 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 248 252 277 273 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.098 0.995 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 226 230 255 251 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.29 0.957 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 194 198 231 227 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.471 0.882 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 162 166 199 195 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.634 0.773 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 130 134 167 163 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.773 0.634 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 114 118 135 131 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.882 0.471 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 82 86 119 115 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.957 0.29 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 66 70 87 83 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.995 0.098 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 43 47 71 67 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.995 -0.098 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 75 79 46 42 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.957 -0.29 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 91 95 78 74 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.882 -0.471 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 123 127 94 90 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.773 -0.634 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 139 143 126 122 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.634 -0.773 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 171 175 142 138 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.471 -0.882 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 203 207 174 170 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.098 -0.995 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 259 263 238 234 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.29 -0.957 0 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 235 239 206 202 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.082 -0.27 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 210 179 193 224 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.218 0.179 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 54 103 133 116 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.082 0.27 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 292 325 311 278 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.133 0.249 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 329 360 346 315 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.028 -0.281 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 270 222 236 262 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.133 -0.249 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 191 158 172 205 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.179 0.218 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 102 151 165 132 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.249 -0.133 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 50 27 81 112 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.218 -0.179 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 98 51 113 128 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.133 -0.249 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 178 147 161 192 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.27 -0.082 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 493 484 430 447 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.082 0.27 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 182 215 229 196 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.179 -0.218 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 413 364 350 383 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.082 -0.27 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 223 190 204 237 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.281 0.028 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 7 15 69 45 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.218 -0.179 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 453 412 382 391 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.028 -0.281 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 301 269 261 287 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.028 0.281 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 245 293 279 253 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.082 0.27 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 187 218 232 201 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.281 -0.028 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 23 6 44 77 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.082 0.27 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 297 328 314 283 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.218 0.179 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 409 448 386 379 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.218 0.179 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 59 106 136 121 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.179 -0.218 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 146 99 129 160 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.249 -0.133 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 472 457 395 418 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.281 0.028 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 489 505 467 443 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.082 -0.27 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 333 300 286 319 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.281 0.028 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 3 18 72 41 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.218 -0.179 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 111 62 124 141 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.028 0.281 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 214 246 254 228 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.179 0.218 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 361 408 378 347 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.179 -0.218 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 159 110 140 173 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.281 -0.028 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 10 2 40 64 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.028 -0.281 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 288 242 250 274 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.281 -0.028 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 504 497 435 466 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.249 0.133 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 449 480 426 387 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.27 0.082 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 19 34 88 73 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.179 0.218 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 107 154 168 137 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.27 -0.082 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 39 22 76 93 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.27 0.082 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 14 31 85 68 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.249 0.133 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 30 55 117 84 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.133 0.249 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 150 183 197 164 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.218 0.179 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 404 461 399 374 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.082 -0.27 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 320 289 275 306 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.249 0.133 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 35 58 120 89 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.249 0.133 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 460 477 423 398 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.249 -0.133 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 485 452 390 431 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.028 0.281 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 266 296 282 258 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.27 -0.082 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 496 473 419 434 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.133 0.249 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 324 357 343 310 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.133 -0.249 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 365 332 318 351 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.133 0.249 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 155 186 200 169 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.218 -0.179 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 456 401 371 394 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.179 0.218 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 356 405 375 342 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.27 0.082 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 481 488 442 427 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.27 -0.082 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 26 11 65 80 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.179 -0.218 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 400 353 339 370 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.028 -0.281 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 241 211 225 249 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.249 -0.133 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 63 38 92 125 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.281 0.028 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 500 509 471 438 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.281 -0.028 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 508 492 446 470 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.028 0.281 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 219 265 257 233 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { 0.133 -0.249 -0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 352 321 307 338 <Ref> { Stadium } }
   }
   <Polygon> {
     <Normal> { -0.27 0.082 0.959 }
-    <TRef> { Texture.005 }
+    <TRef> { Texture.001 }
     <MRef> { Concrete.001 }
     <VertexRef> { 476 501 439 422 <Ref> { Stadium } }
   }
@@ -46071,7 +46071,7 @@
     }
   }
   <Tag> collisionSounds {
-    "80 200 data/sounds/05.wav"
+    "500 10000 data/sounds/05.wav"
   }
   <Tag> linkedPhysicsObject {
     "cylinder 0.33 1.0"
