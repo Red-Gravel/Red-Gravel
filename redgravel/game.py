@@ -8,6 +8,7 @@ import sys
 from direct.showbase.DirectObject import DirectObject
 from direct.showbase import Audio3DManager
 from direct.filter.CommonFilters import CommonFilters
+from direct.gui.OnscreenText import OnscreenText
 from panda3d.core import Vec3, Vec4, Point3
 from panda3d.core import AmbientLight, DirectionalLight
 from panda3d.core import Texture, TextureStage
@@ -15,8 +16,10 @@ from panda3d.core import TransformState
 from panda3d.core import GeoMipTerrain
 from panda3d.core import PNMImage, Filename
 from panda3d.core import BitMask32
-from pandac.PandaModules import ClockObject
-from pandac.PandaModules import WindowProperties
+from panda3d.core import ClockObject
+from panda3d.core import WindowProperties
+from panda3d.core import NodePath
+from panda3d.core import Camera, OrthographicLens
 from panda3d.bullet import BulletWorld
 from panda3d.bullet import (
         BulletPlaneShape, BulletCylinderShape,
@@ -167,7 +170,7 @@ class PlayerControl(DirectObject):
     Controls a vehicle from input
     """
 
-    def __init__(self, vehicle, camera, controlSet):
+    def __init__(self, vehicle, camera, controlSet, render2d):
         self.vehicle = vehicle
         self.camera = camera
         self.inputState = defaultdict(bool)
@@ -224,6 +227,17 @@ class PlayerControl(DirectObject):
         # Eg. 45 degrees lock and 1.0 rate means 45 degrees per second
         self.steeringRate = 0.8
         self.centreingRate = 1.2
+
+        # Initialise 2d display and points
+        self.points = 0
+        self.initialise2d(render2d)
+
+    def initialise2d(self, render2d):
+        """Set up 2d display, currently just shows player's score
+        """
+
+        self.pointsLabel = OnscreenText(text="0", pos=(-0.85, -0.9), scale=0.1)
+        self.pointsLabel.reparentTo(render2d)
 
     def updatePlayer(self, dt):
         velocity = self.vehicle.rigidNode.getLinearVelocity()
@@ -314,6 +328,10 @@ class PlayerControl(DirectObject):
         # Look slightly ahead of the car
         self.camera.lookAt(*vPos)
         self.camera.setP(self.camera.getP() + 7)
+
+    def add_points(self, value):
+        self.points += value
+        self.pointsLabel.setText("%d" % self.points)
 
 
 class World(object):
@@ -465,11 +483,39 @@ class World(object):
             #set up player car
             vehicle = Vehicle(vehiclePosition, self.worldRender, self.world, self.base)
             self.playerVehicles.append(vehicle)
+            # Create a 2D display region for showing the player's HUD
+            playerRender2d = self.createPlayerDisplay(displayBox)
             #set up player controller with car, camera and keyset
-            playerController = PlayerControl(self.playerVehicles[i], self.playerCameras[i], self.playerInputKeys[i])
+            playerController = PlayerControl(
+                    self.playerVehicles[i],
+                    self.playerCameras[i],
+                    self.playerInputKeys[i],
+                    playerRender2d)
             self.playerControllers.append(playerController)
             #set up skybox for this particular camera set and hide from other cameras
             self.createSkybox(self.playerCameras[i], self.playerInputKeys[i]) #can use inputkey code for bitmaskCode as it will be unique
+
+    def createPlayerDisplay(self, displayBox):
+        """Create a 2D display region with camera to be used to
+        show things like the speedo and points
+        """
+
+        displayRegion = self.base.win.makeDisplayRegion(*displayBox)
+        displayRegion.setSort(20)
+
+        camera2d = NodePath(Camera('player2dcam'))
+        lens = OrthographicLens()
+        lens.setFilmSize(2, 2)
+        lens.setNearFar(-1000, 1000)
+        camera2d.node().setLens(lens)
+
+        render2d = NodePath('render2d')
+        render2d.setDepthTest(False)
+        render2d.setDepthWrite(False)
+        camera2d.reparentTo(render2d)
+        displayRegion.setCamera(camera2d)
+
+        return render2d
 
     def windowEventSetup( self ):
         """
@@ -601,6 +647,12 @@ class World(object):
             (v.rigidNode, v.collisionSound) for v in self.playerVehicles)
         self.collisionObjects.update(self.level.collisionObjects)
 
+        # For assigning points etc, keep track of the player that
+        # controls each vehicle
+        self.vehicleControllers = dict(
+            (vehicle.rigidNode, player) for vehicle, player in
+            zip(self.playerVehicles, self.playerControllers))
+
     def checkCollisions(self, dt):
         """
         Check to see what objects have collided and take actions
@@ -626,6 +678,12 @@ class World(object):
             for node in nodes:
                 if node in self.collisionObjects:
                     totalContactForce[node] += force
+            # If both objects are vehicles, then update points
+            if all(n in self.vehicleControllers for n in nodes):
+                self.calculateCollisionPoints(
+                    manifold,
+                    self.vehicleControllers[nodes[0]],
+                    self.vehicleControllers[nodes[1]])
 
         for node, force in totalContactForce.iteritems():
             forceChange = force - self.previousContactForce[node]
@@ -668,6 +726,17 @@ class World(object):
         collisionSound.setVolume(
             min(0.2 + magnitude / soundInfo.maxForce, 1.0))
         collisionSound.play()
+
+    def calculateCollisionPoints(self, manifold, player1, player2):
+        """Calculate points to give players when vehicles collide
+        """
+
+        # Todo: Make this actually assign points based on the vehicle
+        # travelling towards the collision location
+        manifoldPoints = manifold.getManifoldPoints()
+        totalImpulse = sum((p.getAppliedImpulse() for p in manifoldPoints))
+        player1.add_points(int(totalImpulse) // 100)
+        player2.add_points(int(totalImpulse) // 100)
 
     def gameLoop(self, task):
         dt = self.globalClock.getDt()
